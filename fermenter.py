@@ -16,8 +16,8 @@ from threading import Thread
 # Pins
 SENSOR_PINS = {
         "button": 13,
-        "phototransistor": 0,
-        "thermometer": 4,
+        "phototransistor": 14,
+        "thermometer": 19,
 }
 ACTUATOR_PINS = {
         "impeller motor": 10,
@@ -219,7 +219,26 @@ def record_transmittances(a):
     (ambient, red, green) = measure_transmittances(a)
     end_time = now()
     return (end_time, ambient, red, green)
-def reinitialize_records(records):
+def construct_records(records):
+    """Returns an empty records dictionary."""
+    records = {
+            "start": now(),
+            "stop": None,
+            "temp": [],
+            "heater": [],
+            "impeller": [],
+            "optics": {
+                "calibration": [],
+                "ambient": [],
+                "red": [],
+                "green": [],
+            },
+    }
+    return records
+def reinitialize_records():
+    """Clears everything in records.
+    Sets the start time of to be the current time.
+    """
     records["start"] = now()
     records["stop"] = None
     records["temp"][:] = []
@@ -232,6 +251,25 @@ def reinitialize_records(records):
 ###############################################################################
 # THREADS
 ###############################################################################
+def construct_locks():
+    """Returns an initial locks dictionary."""
+    locks = {
+            "records": threading.Lock(),
+            "impeller motor": threading.Lock(),
+            "heater": threading.Lock(),
+            "leds": threading.Lock(),
+    }
+    return locks
+def construct_events():
+    """Returns an initial events dictionary with events in initial states."""
+    events = {
+            "fermenter idle": threading.Event(),
+            "button pressed": threading.Event(),
+            "calibrate": threading.Event(),
+    }
+    events["fermeter idle"].set()
+    events["calibrate"].set()
+    return events
 def start_fermenter(a, records, locks, idle_event):
     """Starts fermenter operation."""
     idle_event.clear()
@@ -253,7 +291,7 @@ def stop_fermenter(a, records, locks, idle_event):
             records["impeller"].append((now(), 0))
             records["heater"].append((now(), 0))
         records["stop"] = now()
-def monitor_temp(a, records, locks, idle_event):
+def monitor_temp(a, records, locks, active_event):
     """Continuously monitor and record fluid temperature and heater state.
     Also adjust heater based on temperature control information.
     """
@@ -266,7 +304,9 @@ def monitor_temp(a, records, locks, idle_event):
             with locks["records"]:
                 records["temp"].append((record[0], record[1]))
                 records["heater"].append((record[0], record[2]))
-        idle_event.wait(TEMP_MEASUREMENT_INTERVAL)
+            idle_event.wait(TEMP_MEASUREMENT_INTERVAL)
+        else:
+            wait(BUTTON_CHECK_INTERVAL)
 def monitor_optics(a, records, locks, calibrate_event, idle_event):
     """Continuously monitor and record fluid optical properties"""
     while true:
@@ -281,7 +321,9 @@ def monitor_optics(a, records, locks, calibrate_event, idle_event):
                 records["ambient"].append((record[0], record[1]))
                 records["red"].append((record[0], record[2]))
                 records["green"].append((record[0], record[3]))
-        idle_event.wait(LIGHT_MEASUREMENT_INTERVAL)
+            idle_event.wait(LIGHT_MEASUREMENT_INTERVAL)
+        else:
+            wait(BUTTON_CHECK_INTERVAL)
 def monitor_button(a, records, locks, idle_event, pressed_event):
     """Continuously monitor power button state"""
     while true:
@@ -305,30 +347,9 @@ def run_fermenter():
     a = connect()
     turn_off_actuators(a)
     turn_off_leds(a)
-    records = {
-            "start": now(),
-            "stop": None,
-            "temp": [],
-            "heater": [],
-            "impeller": [],
-            "optics": {
-                "calibration": [],
-                "ambient": [],
-                "red": [],
-                "green": [],
-            },
-    }
-    locks = {
-            "records": threading.Lock(),
-            "impeller motor": threading.Lock(),
-            "heater": threading.Lock(),
-            "leds": threading.Lock(),
-    }
-    events = {
-            "fermenter idle": threading.Event(),
-            "button pressed": threading.Event(),
-            "calibrate": threading.Event(),
-    }
+    records = construct_records()
+    locks = construct_locks()
+    events = construct_events()
     button_monitor = Thread(target=monitor_button, name="button",
             args=(a, records, locks, events["fermenter idle"],
                 events["button pressed"]))
@@ -342,9 +363,7 @@ def run_fermenter():
             "temp": temp_monitor,
             "optics": optics_monitor,
     }
-    events["fermeter idle"].set()
-    events["calibrate"].set()
-    threads["button"].start()
     threads["temp"].start()
     threads["optics"].start()
+    threads["button"].start()
     return (records, locks, events, threads)
