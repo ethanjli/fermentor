@@ -8,6 +8,7 @@ import datetime
 from array import array
 import numpy as np
 import nanpy
+from threading import Thread
 
 ###############################################################################
 # PARAMETERS
@@ -198,7 +199,9 @@ def measure_transmittances(a):
 # DATA LOGGING
 ###############################################################################
 def record_heat_control(a):
-    """Returns a heat control record."""
+    """Returns a heat control record.
+    Also adjusts the heating control effort and records that.
+    """
     temp = measure_temp(a)
     heater_duty_cycle = temp_to_heating_control_effort(temp)
     a.analogWrite(ACTUATOR_PINS["heater"],
@@ -210,30 +213,100 @@ def record_transmittances(a):
     (ambient, red, green) = measure_transmittances(a)
     end_time = datetime.now()
     return (end_time, ambient, red, green)
+def reinitialize_records(records):
+    records["start"] = datetime.now()
+    records["stop"] = None
+    records["temp"][:] = []
+    records["impeller"][:] = []
+    records["optics"]["calibration"][:] = []
+    records["optics"]["ambient"][:] = []
+    records["optics"]["red"][:] = []
 
 ###############################################################################
 # THREADS
 ###############################################################################
-def monitor_temp(a, records, idle_event):
+def monitor_temp(a, records, records_lock, idle_event):
     """Continuously monitor and record fluid temperature and heater state"""
-    while not idle_event.is_set():
-        record = record_heat_control(a)
-        records["temperature"].append((record[0], record[1]))
-        records["heater"].append((record[0], record[2]))
+    while true:
+        if not idle_event.is_set():
+            record = record_heat_control(a)
+            with records_lock:
+                records["temperature"].append((record[0], record[1]))
+                records["heater"].append((record[0], record[2]))
         idle_event.wait(TEMP_MEASUREMENT_INTERVAL)
-def monitor_optics(a, records, idle_event):
+def monitor_optics(a, records, records_lock, calibrate_event, idle_event):
     """Continuously monitor and record fluid optical properties"""
-    while not idle_event.is_set():
-        record = record_transmittances(a)
-        records["ambient"].append((record[0], record[1]))
-        records["red"].append((record[0], record[2]))
-        records["green"].append((record[0], record[3]))
+    while true:
+        if not idle_event.is_set():
+            record = record_transmittances(a)
+            with records_lock:
+                if calibrate_event.is_set():
+                    records["calibration"].append((record[0], record[2],
+                        record[3]))
+                    calibrate_event.clear()
+                records["ambient"].append((record[0], record[1]))
+                records["red"].append((record[0], record[2]))
+                records["green"].append((record[0], record[3]))
         idle_event.wait(LIGHT_MEASUREMENT_INTERVAL)
-def monitor_button(a, records, idle_event):
+def monitor_button(a, records, records_lock, idle_event, pressed_event):
     """Continuously monitor power button state"""
     while true:
-        if a.digitalRead(SENSOR_PINS["button"]):
-            idle_event.set()
+        button_state = a.digitalRead(SENSOR_PINS["button"])
+        if button_state:
+            if not pressed_event.is_set():
+                if not idle_event.is_set():
+                    idle_event.set()
+                elif idle_event.is_set():
+                    idle_event.clear()
+                    with records_lock:
+                        reinitialize_records(records)
+                pressed_event.set()
         else:
-            idle_event.clear()
+            if pressed_event.is_set():
+                pressed_event.clear()
         wait(BUTTON_CHECK_INTERVAL)
+
+###############################################################################
+# MAIN
+###############################################################################
+def run_fermenter():
+    a = connect()
+    records = {
+            "start": datetime.now(),
+            "stop": None,
+            "temp": [],
+            "impeller": [],
+            "optics": {
+                "calibration": [],
+                "ambient": [],
+                "red": [],
+                "green": [],
+            },
+    }
+    locks = {
+            "records": threading.Lock(),
+    }
+    events = {
+            "fermenter idle": threading.Event(),
+            "button pressed": threading.Event(),
+            "calibrate": threading.Event(),
+    }
+    button_monitor = Thread(target=monitor_button, name="button",
+            args=(a, records, locks["records"], events["fermenter idle"],
+                events["button pressed"]))
+    temp_monitor = Thread(target=monitor_temp, name="temp",
+            args=(a, records, locks["records"], locks["optics"],
+                events["fermenter idle"]))
+    optics_monitor = Thread(target=monitor_optics, name="optics",
+            args=(a, records, locks["records"], events["calibrate"],
+                events["fermenter idle"]))
+    threads = {
+            "button": button_monitor,
+            "temp": temp_monitor,
+            "optics": optics_monitor,
+    }
+    events["calibrate"].set()
+    threads["button"].start()
+    threads["temp"].start()
+    threads["optics"].start()
+    return (records, locks, events, threads)
