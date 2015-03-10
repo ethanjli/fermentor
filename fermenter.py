@@ -59,7 +59,7 @@ TEMP_MEASUREMENT_INTERVAL = 5 # (sec): time to wait between measurements
 BUTTON_CHECK_INTERVAL = 0.5 # (sec): time to wait between checks of button
 
 # Impeller
-IMPELLER_DEFAULT_DUTY = 0 # default duty cycle of the impeller
+IMPELLER_DEFAULT_DUTY = 0.2 # default duty cycle of the impeller
 
 # Constants
 SERIAL_RATE = "115200" # (baud) rate of USB communication
@@ -194,9 +194,9 @@ def measure_transmittances(a):
     transmittance.
     """
     acquisitions = {
-        "red": array('I'),
-        "ambient": array('I'),
-        "green": array('I'),
+        "red": array('f'),
+        "ambient": array('f'),
+        "green": array('f'),
     }
     for _ in range(LIGHT_ACQUISITIONS_PER_MEASUREMENT):
         for color in acquisitions.keys():
@@ -342,8 +342,10 @@ def monitor_button(a, records, locks, idle_event, pressed_event):
             if not pressed_event.is_set():
                 if not idle_event.is_set():
                     stop_fermenter(a, records, locks, idle_event)
-                elif idle_event.is_set():
+                    idle_event.set()
+                else:
                     start_fermenter(a, records, locks, idle_event)
+                    idle_event.clear()
                 pressed_event.set()
         else:
             if pressed_event.is_set():
@@ -357,6 +359,7 @@ def interrupt_handler(signal_num, _):
     sys.exit(signal_num)
 def run_fermenter():
     a = connect()
+    set_pin_modes(a)
     signal.signal(signal.SIGINT, interrupt_handler)
     turn_off_actuators(a)
     turn_off_leds(a)
