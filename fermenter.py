@@ -4,12 +4,14 @@ Drives an Arduino to control a fermenter.
 """
 
 import time
-import datetime
+from datetime import datetime
 from array import array
 import numpy as np
 from Arduino import Arduino
 import threading
 from threading import Thread
+import signal
+import sys
 
 ###############################################################################
 # PARAMETERS
@@ -57,7 +59,7 @@ TEMP_MEASUREMENT_INTERVAL = 5 # (sec): time to wait between measurements
 BUTTON_CHECK_INTERVAL = 0.5 # (sec): time to wait between checks of button
 
 # Impeller
-IMPELLER_DEFAULT_DUTY = 1 # default duty cycle of the impeller
+IMPELLER_DEFAULT_DUTY = 0 # default duty cycle of the impeller
 
 # Constants
 SERIAL_RATE = "115200" # (baud) rate of USB communication
@@ -213,17 +215,17 @@ def record_heat_control(a):
     """
     temp = measure_temp(a)
     heater_duty_cycle = temp_to_heating_control_effort(temp)
-    end_time = datetime.datetime.now()
+    end_time = datetime.now()
     return (end_time, temp, heater_duty_cycle)
 def record_transmittances(a):
     """Returns a transmittances record."""
     (ambient, red, green) = measure_transmittances(a)
-    end_time = datetime.datetime.now()
+    end_time = datetime.now()
     return (end_time, ambient, red, green)
 def construct_records():
     """Returns an empty records dictionary."""
     records = {
-        "start": datetime.datetime.now(),
+        "start": datetime.now(),
         "stop": None,
         "temp": [],
         "heater": [],
@@ -249,8 +251,8 @@ def reinitialize_records(records):
     records["temp"][:] = []
     records["heater"][:] = []
     records["impeller"][:] = []
-    records["optics"]["calibration"]["red"][:] = None
-    records["optics"]["calibration"]["green"][:] = None
+    records["optics"]["calibration"]["red"] = None
+    records["optics"]["calibration"]["green"] = None
     records["optics"]["calibrations"][:] = []
     records["optics"]["ambient"][:] = []
     records["optics"]["red"][:] = []
@@ -351,8 +353,11 @@ def monitor_button(a, records, locks, idle_event, pressed_event):
 ###############################################################################
 # MAIN
 ###############################################################################
+def interrupt_handler(signal_num, _):
+    sys.exit(signal_num)
 def run_fermenter():
     a = connect()
+    signal.signal(signal.SIGINT, interrupt_handler)
     turn_off_actuators(a)
     turn_off_leds(a)
     records = construct_records()
@@ -371,10 +376,15 @@ def run_fermenter():
         "temp": temp_monitor,
         "optics": optics_monitor,
     }
+    threads["temp"].daemon = True
+    threads["optics"].daemon = True
+    threads["button"].daemon = True
     threads["temp"].start()
     threads["optics"].start()
     threads["button"].start()
     return (records, locks, events, threads)
 
 if __name__ == "__main__":
-    run_fermenter()
+    (records, locks, events, threads) = run_fermenter()
+    for thread in threads.values():
+        signal.pause()
