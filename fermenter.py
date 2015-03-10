@@ -4,10 +4,11 @@ Drives an Arduino to control a fermenter.
 """
 
 import time
-from datetime import now
+import datetime
 from array import array
 import numpy as np
-import nanpy
+from Arduino import Arduino
+import threading
 from threading import Thread
 
 ###############################################################################
@@ -15,16 +16,16 @@ from threading import Thread
 ###############################################################################
 # Pins
 SENSOR_PINS = {
-        "button": 13,
-        "phototransistor": 14,
-        "thermometer": 19,
+    "button": 13,
+    "phototransistor": 14,
+    "thermometer": 19,
 }
 ACTUATOR_PINS = {
-        "impeller motor": 10,
-        "heater fan": 3,
-        "heater": 5,
-        "red led": 9,
-        "green led": 7,
+    "impeller motor": 10,
+    "heater fan": 3,
+    "heater": 5,
+    "red led": 9,
+    "green led": 7,
 }
 
 # Light sensing
@@ -59,8 +60,9 @@ BUTTON_CHECK_INTERVAL = 0.5 # (sec): time to wait between checks of button
 IMPELLER_DEFAULT_DUTY = 1 # default duty cycle of the impeller
 
 # Constants
-SERIAL_RATE = "9600" # (baud) rate of USB communication
+SERIAL_RATE = "115200" # (baud) rate of USB communication
 PWM_MAX = 255
+ARDUINO_PORT = "/dev/ttyACM1"
 
 ###############################################################################
 # STATELESS FUNCTIONS
@@ -88,7 +90,6 @@ def discard_temp_outliers(samples):
     """
     distances = np.abs(samples - np.median(samples))
     return samples[distances <= TEMP_OUTLIER_THRESHOLD]
-    return max(0, min(1, raw_duty))
 def discard_light_outliers(samples):
     """Filter outliers out from a set of light samples.
     Assumes that the set of light samples is acquired when fluid and
@@ -111,24 +112,24 @@ def transmittance_to_absorbance(transmittance, full_transmittance):
 ###############################################################################
 def connect():
     """Initializes a connection to the Arduino"""
-    return nanpy.ArduinoApi()
+    return Arduino(SERIAL_RATE, port=ARDUINO_PORT)
 def set_pin_modes(a):
     """Initializes pin modes for all pins"""
     for pin in SENSOR_PINS.values():
-        a.pinMode(pin, a.INPUT)
+        a.pinMode(pin, "INPUT")
     for pin in ACTUATOR_PINS.values():
-        a.pinMode(pin, a.OUTPUT)
+        a.pinMode(pin, "OUTPUT")
 def turn_off_actuators(a):
     """Turns off all actuators"""
     for pin in ACTUATOR_PINS.values():
-        a.digitalWrite(pin, a.LOW)
+        a.digitalWrite(pin, "LOW")
 def turn_off_leds(a):
     """Turns off all LEDs"""
-    a.digitalWrite(ACTUATOR_PINS["red led"], a.LOW)
-    a.digitalWrite(ACTUATOR_PINS["green led"], a.LOW)
+    a.digitalWrite(ACTUATOR_PINS["red led"], "LOW")
+    a.digitalWrite(ACTUATOR_PINS["green led"], "LOW")
 def initialize_default_actuators(a):
     """Turns on open-loop actuators to default states"""
-    a.digitalWrite(ACTUATOR_PINS["heater fan"], a.HIGH)
+    a.digitalWrite(ACTUATOR_PINS["heater fan"], "HIGH")
     a.analogWrite(ACTUATOR_PINS["impeller motor"],
             duty_cycle_to_pin_val(IMPELLER_DEFAULT_DUTY))
 
@@ -170,9 +171,9 @@ def acquire_light(a, color):
     """
     turn_off_leds(a)
     if color == "red":
-        a.digitalWrite(ACTUATOR_PINS["red led"], a.HIGH)
+        a.digitalWrite(ACTUATOR_PINS["red led"], "HIGH")
     elif color == "green":
-        a.digitalWrite(ACTUATOR_PINS["green led"], a.HIGH)
+        a.digitalWrite(ACTUATOR_PINS["green led"], "HIGH")
     time.sleep(FILTER_STEADY_STATE_TIME)
     samples = acquire_pin(a, SENSOR_PINS["phototransistor"],
             LIGHT_SAMPLES_PER_ACQUISITION, LIGHT_SAMPLE_INTERVAL)
@@ -191,11 +192,11 @@ def measure_transmittances(a):
     transmittance.
     """
     acquisitions = {
-            "red": array('I'),
-            "ambient": array('I'),
-            "green": array'I'),
+        "red": array('I'),
+        "ambient": array('I'),
+        "green": array('I'),
     }
-    for i in range(LIGHT_ACQUISITIONS_PER_MEASUREMENT):
+    for _ in range(LIGHT_ACQUISITIONS_PER_MEASUREMENT):
         for color in acquisitions.keys():
             acquisitions[color].append(acquire_light(a, color))
     ambient = np.mean(discard_light_outliers(acquisitions["ambient"]))
@@ -212,39 +213,45 @@ def record_heat_control(a):
     """
     temp = measure_temp(a)
     heater_duty_cycle = temp_to_heating_control_effort(temp)
-    end_time = now()
+    end_time = datetime.datetime.now()
     return (end_time, temp, heater_duty_cycle)
 def record_transmittances(a):
     """Returns a transmittances record."""
     (ambient, red, green) = measure_transmittances(a)
-    end_time = now()
+    end_time = datetime.datetime.now()
     return (end_time, ambient, red, green)
-def construct_records(records):
+def construct_records():
     """Returns an empty records dictionary."""
     records = {
-            "start": now(),
-            "stop": None,
-            "temp": [],
-            "heater": [],
-            "impeller": [],
-            "optics": {
-                "calibration": [],
-                "ambient": [],
-                "red": [],
-                "green": [],
+        "start": datetime.datetime.now(),
+        "stop": None,
+        "temp": [],
+        "heater": [],
+        "impeller": [],
+        "optics": {
+            "calibration": {
+                "red": None,
+                "green": None,
             },
+            "calibrations": [],
+            "ambient": [],
+            "red": [],
+            "green": [],
+        },
     }
     return records
-def reinitialize_records():
+def reinitialize_records(records):
     """Clears everything in records.
     Sets the start time of to be the current time.
     """
-    records["start"] = now()
+    records["start"] = datetime.now()
     records["stop"] = None
     records["temp"][:] = []
     records["heater"][:] = []
     records["impeller"][:] = []
-    records["optics"]["calibration"][:] = []
+    records["optics"]["calibration"]["red"][:] = None
+    records["optics"]["calibration"]["green"][:] = None
+    records["optics"]["calibrations"][:] = []
     records["optics"]["ambient"][:] = []
     records["optics"]["red"][:] = []
 
@@ -254,20 +261,20 @@ def reinitialize_records():
 def construct_locks():
     """Returns an initial locks dictionary."""
     locks = {
-            "records": threading.Lock(),
-            "impeller motor": threading.Lock(),
-            "heater": threading.Lock(),
-            "leds": threading.Lock(),
+        "records": threading.Lock(),
+        "impeller motor": threading.Lock(),
+        "heater": threading.Lock(),
+        "leds": threading.Lock(),
     }
     return locks
 def construct_events():
     """Returns an initial events dictionary with events in initial states."""
     events = {
-            "fermenter idle": threading.Event(),
-            "button pressed": threading.Event(),
-            "calibrate": threading.Event(),
+        "fermenter idle": threading.Event(),
+        "button pressed": threading.Event(),
+        "calibrate": threading.Event(),
     }
-    events["fermeter idle"].set()
+    events["fermenter idle"].set()
     events["calibrate"].set()
     return events
 def start_fermenter(a, records, locks, idle_event):
@@ -276,7 +283,7 @@ def start_fermenter(a, records, locks, idle_event):
     with locks["records"]:
         reinitialize_records(records)
         with locks["impeller motor"]:
-            records["impeller"].append((now(), IMPELLER_DEFAULT_DUTY))
+            records["impeller"].append((datetime.now(), IMPELLER_DEFAULT_DUTY))
             initialize_default_actuators(a)
 def stop_fermenter(a, records, locks, idle_event):
     """Stops fermenter operation."""
@@ -284,49 +291,50 @@ def stop_fermenter(a, records, locks, idle_event):
     with locks["leds"]:
         turn_off_leds(a)
     with locks["records"]:
-        records["impeller"].append((now(), records["impeller"][-1][1]))
-        records["heater"].append((now(), records["heater"][-1][1]))
+        records["impeller"].append((datetime.now(),
+                                    records["impeller"][-1][1]))
+        records["heater"].append((datetime.now(), records["heater"][-1][1]))
         with locks["impeller motor"] and locks["heater"]:
             turn_off_actuators(a)
-            records["impeller"].append((now(), 0))
-            records["heater"].append((now(), 0))
-        records["stop"] = now()
-def monitor_temp(a, records, locks, active_event):
+            records["impeller"].append((datetime.now(), 0))
+            records["heater"].append((datetime.now(), 0))
+        records["stop"] = datetime.now()
+def monitor_temp(a, records, locks, idle_event):
     """Continuously monitor and record fluid temperature and heater state.
     Also adjust heater based on temperature control information.
     """
-    while true:
+    while True:
         if not idle_event.is_set():
             record = record_heat_control(a)
             with locks["heater"]:
                 a.analogWrite(ACTUATOR_PINS["heater"],
-                        duty_cycle_to_pin_val(record[2]))
+                              duty_cycle_to_pin_val(record[2]))
             with locks["records"]:
                 records["temp"].append((record[0], record[1]))
                 records["heater"].append((record[0], record[2]))
             idle_event.wait(TEMP_MEASUREMENT_INTERVAL)
         else:
-            wait(BUTTON_CHECK_INTERVAL)
+            time.sleep(BUTTON_CHECK_INTERVAL)
 def monitor_optics(a, records, locks, calibrate_event, idle_event):
     """Continuously monitor and record fluid optical properties"""
-    while true:
+    while True:
         if not idle_event.is_set():
             with locks["leds"]:
                 record = record_transmittances(a)
             with locks["records"]:
                 if calibrate_event.is_set():
                     records["calibration"].append((record[0], record[2],
-                        record[3]))
+                                                   record[3]))
                     calibrate_event.clear()
                 records["ambient"].append((record[0], record[1]))
                 records["red"].append((record[0], record[2]))
                 records["green"].append((record[0], record[3]))
             idle_event.wait(LIGHT_MEASUREMENT_INTERVAL)
         else:
-            wait(BUTTON_CHECK_INTERVAL)
+            time.sleep(BUTTON_CHECK_INTERVAL)
 def monitor_button(a, records, locks, idle_event, pressed_event):
     """Continuously monitor power button state"""
-    while true:
+    while True:
         button_state = a.digitalRead(SENSOR_PINS["button"])
         if button_state:
             if not pressed_event.is_set():
@@ -338,7 +346,7 @@ def monitor_button(a, records, locks, idle_event, pressed_event):
         else:
             if pressed_event.is_set():
                 pressed_event.clear()
-        wait(BUTTON_CHECK_INTERVAL)
+        time.sleep(BUTTON_CHECK_INTERVAL)
 
 ###############################################################################
 # MAIN
@@ -351,19 +359,22 @@ def run_fermenter():
     locks = construct_locks()
     events = construct_events()
     button_monitor = Thread(target=monitor_button, name="button",
-            args=(a, records, locks, events["fermenter idle"],
-                events["button pressed"]))
+                            args=(a, records, locks, events["fermenter idle"],
+                                  events["button pressed"]))
     temp_monitor = Thread(target=monitor_temp, name="temp",
-            args=(a, records, locks, events["fermenter idle"]))
+                          args=(a, records, locks, events["fermenter idle"]))
     optics_monitor = Thread(target=monitor_optics, name="optics",
-            args=(a, records, locks, events["calibrate"],
-                events["fermenter idle"]))
+                            args=(a, records, locks, events["calibrate"],
+                                  events["fermenter idle"]))
     threads = {
-            "button": button_monitor,
-            "temp": temp_monitor,
-            "optics": optics_monitor,
+        "button": button_monitor,
+        "temp": temp_monitor,
+        "optics": optics_monitor,
     }
     threads["temp"].start()
     threads["optics"].start()
     threads["button"].start()
     return (records, locks, events, threads)
+
+if __name__ == "__main__":
+    run_fermenter()
