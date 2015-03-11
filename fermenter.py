@@ -44,8 +44,8 @@ LIGHT_ACQUISITIONS_PER_MEASUREMENT = 10 # robustness to ambient light variation
 
 # Temperature noise filtering
 TEMP_SAMPLES_PER_ACQUISITION = 10
-TEMP_SAMPLE_INTERVAL = 0.1 # (sec): time to wait between each sampling
-TEMP_OUTLIER_THRESHOLD = 0.5 # (deg C): maximum allowed deviation from median
+TEMP_SAMPLE_INTERVAL = 0.5 # (sec): time to wait between each sampling
+TEMP_OUTLIER_THRESHOLD = 20 # (deg C): maximum allowed deviation from median
 
 # Temperature control
 HEAT_LOSS = 9.3 # (Watts): rate of heat loss at 37 deg C
@@ -53,7 +53,7 @@ MAX_HEATING = 14.9 # (Watts): rate at which TEC supply heat
 SETPOINT = 37.5 # (deg C): target temperature to maintain
 HEATER_SETPOINT_DUTY = HEAT_LOSS / MAX_HEATING # stable duty cycle at setpoint
 GAIN = HEATER_SETPOINT_DUTY - 1 # proportional gain
-TEMP_MEASUREMENT_INTERVAL = 5 # (sec): time to wait between measurements
+TEMP_MEASUREMENT_INTERVAL = 1 # (sec): time to wait between measurements
 
 # Button pressing
 BUTTON_CHECK_INTERVAL = 0.5 # (sec): time to wait between checks of button
@@ -64,7 +64,7 @@ IMPELLER_DEFAULT_DUTY = 0.2 # default duty cycle of the impeller
 # Constants
 SERIAL_RATE = "115200" # (baud) rate of USB communication
 PWM_MAX = 255
-ARDUINO_PORT = "/dev/ttyACM1"
+ARDUINO_PORT = "/dev/ttyACM0"
 
 ###############################################################################
 # STATELESS FUNCTIONS
@@ -147,7 +147,7 @@ def acquire_pin(a, pin, nsamples, sample_interval):
         nsamples: the number of samples to acquire
         sample_interval: the time to wait between samples
     """
-    samples = array('I')
+    samples = array('i')
     for i in range(nsamples):
         if i != 0:
             time.sleep(sample_interval)
@@ -194,16 +194,16 @@ def measure_transmittances(a):
     transmittance.
     """
     acquisitions = {
-        "red": array('f'),
-        "ambient": array('f'),
-        "green": array('f'),
+        "red": array('i'),
+        "ambient": array('i'),
+        "green": array('i'),
     }
     for _ in range(LIGHT_ACQUISITIONS_PER_MEASUREMENT):
         for color in acquisitions.keys():
-            acquisitions[color].append(acquire_light(a, color))
-    ambient = np.mean(discard_light_outliers(acquisitions["ambient"]))
-    red = np.mean(discard_light_outliers(acquisitions["red"]))
-    green = np.mean(discard_light_outliers(acquisitions["green"]))
+            acquisitions[color].append(int(acquire_light(a, color))
+    ambient = np.mean(discard_light_outliers(np.array(acquisitions["ambient"])))
+    red = np.mean(discard_light_outliers(np.array(acquisitions["red"])))
+    green = np.mean(discard_light_outliers(np.array(acquisitions["green"])))
     return (ambient, ambient - red, ambient - green)
 
 ###############################################################################
@@ -308,6 +308,7 @@ def monitor_temp(a, records, locks, idle_event):
     while True:
         if not idle_event.is_set():
             record = record_heat_control(a)
+            print(record)
             with locks["heater"]:
                 a.analogWrite(ACTUATOR_PINS["heater"],
                               duty_cycle_to_pin_val(record[2]))
@@ -322,15 +323,19 @@ def monitor_optics(a, records, locks, calibrate_event, idle_event):
     while True:
         if not idle_event.is_set():
             with locks["leds"]:
+                print(record)
                 record = record_transmittances(a)
             with locks["records"]:
                 if calibrate_event.is_set():
-                    records["calibration"].append((record[0], record[2],
-                                                   record[3]))
+                    records["optics"]["calibrations"].append((record[0],
+                                                              record[2],
+                                                              record[3]))
+                    records["optics"]["calibration"]["red"] = record[2]
+                    records["optics"]["calibration"]["green"] = record[3]
                     calibrate_event.clear()
-                records["ambient"].append((record[0], record[1]))
-                records["red"].append((record[0], record[2]))
-                records["green"].append((record[0], record[3]))
+                records["optics"]["ambient"].append((record[0], record[1]))
+                records["optics"]["red"].append((record[0], record[2]))
+                records["optics"]["green"].append((record[0], record[3]))
             idle_event.wait(LIGHT_MEASUREMENT_INTERVAL)
         else:
             time.sleep(BUTTON_CHECK_INTERVAL)
