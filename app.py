@@ -8,6 +8,7 @@ import logging
 from flask import Flask, send_from_directory
 from flask.ext.socketio import SocketIO, emit
 import fermenter
+
 logging.basicConfig()
 
 ###############################################################################
@@ -44,7 +45,7 @@ def update_stats(records, locks):
                 "green": records["optics"]["green"][-1],
             },
         }
-        socketio.emit("stats update", stats)
+        socketio.emit("stats update", stats, namespace="/socket")
         time.sleep(STATS_INTERVAL)
 
 ###############################################################################
