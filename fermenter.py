@@ -52,7 +52,7 @@ MAX_HEATING = 14.9 # (Watts): rate at which TEC supply heat
 SETPOINT = 37.5 # (deg C): target temperature to maintain
 HEATER_SETPOINT_DUTY = HEAT_LOSS / MAX_HEATING # stable duty cycle at setpoint
 GAIN = HEATER_SETPOINT_DUTY - 1 # proportional gain
-TEMP_MEASUREMENT_INTERVAL = 1 # (sec): time to wait between measurements
+TEMP_MEASUREMENT_INTERVAL = 5 # (sec): time to wait between measurements
 
 # Impeller
 IMPELLER_DEFAULT_DUTY = 0.2 # default duty cycle of the impeller
@@ -207,8 +207,9 @@ def measure_transmittances(a, arduino_lock):
     }
     for _ in range(LIGHT_ACQUISITIONS_PER_MEASUREMENT):
         for color in acquisitions.keys():
-            acquisitions[color].append(int(acquire_light(a, color,
-                                                         arduino_lock)))
+            light = acquire_light(a, color, arduino_lock)
+            if not np.isnan(light):
+                acquisitions[color].append(int(light)))
     ambient = np.mean(discard_light_outliers(np.array(acquisitions["ambient"])))
     red = np.mean(discard_light_outliers(np.array(acquisitions["red"])))
     green = np.mean(discard_light_outliers(np.array(acquisitions["green"])))
