@@ -284,14 +284,17 @@ def construct_events():
     return events
 def start_fermenter(a, records, locks, idle_event):
     """Starts fermenter operation."""
+    print("Starting...")
     idle_event.clear()
     with locks["records"]:
         reinitialize_records(records)
         with locks["impeller motor"]:
             records["impeller"].append((datetime.now(), IMPELLER_DEFAULT_DUTY))
             initialize_default_actuators(a)
+    print("Started.")
 def stop_fermenter(a, records, locks, idle_event):
     """Stops fermenter operation."""
+    print("Preparing to stop...")
     idle_event.set()
     with locks["leds"]:
         turn_off_leds(a)
@@ -304,6 +307,7 @@ def stop_fermenter(a, records, locks, idle_event):
             records["impeller"].append((datetime.now(), 0))
             records["heater"].append((datetime.now(), 0))
         records["stop"] = datetime.now()
+    print("Stopped.")
 def monitor_temp(a, records, locks, idle_event):
     """Continuously monitor and record fluid temperature and heater state.
     Also adjust heater based on temperature control information.
