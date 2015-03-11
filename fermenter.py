@@ -18,9 +18,8 @@ import sys
 ###############################################################################
 # Pins
 SENSOR_PINS = {
-    "button": 13,
-    "phototransistor": 14,
-    "thermometer": 19,
+    "phototransistor": 0,
+    "thermometer": 5,
 }
 ACTUATOR_PINS = {
     "impeller motor": 10,
@@ -34,7 +33,7 @@ ACTUATOR_PINS = {
 LOW_PASS_FILTER_TAU = 0.016 # (s): the RC constant of the low pass filter
 STEADY_STATE_TAUS = 30 # number of taus to wait to reach steady state
 FILTER_STEADY_STATE_TIME = LOW_PASS_FILTER_TAU * STEADY_STATE_TAUS
-LIGHT_MEASUREMENT_INTERVAL = 20 # (sec): time to wait between measurements
+LIGHT_MEASUREMENT_INTERVAL = 10 # (sec): time to wait between measurements
 
 # Light noise filtering
 LIGHT_SAMPLES_PER_ACQUISITION = 10
@@ -55,16 +54,17 @@ HEATER_SETPOINT_DUTY = HEAT_LOSS / MAX_HEATING # stable duty cycle at setpoint
 GAIN = HEATER_SETPOINT_DUTY - 1 # proportional gain
 TEMP_MEASUREMENT_INTERVAL = 1 # (sec): time to wait between measurements
 
-# Button pressing
-BUTTON_CHECK_INTERVAL = 1 # (sec): time to wait between checks of button
-
 # Impeller
 IMPELLER_DEFAULT_DUTY = 0.2 # default duty cycle of the impeller
+
+# Idling
+IDLE_CHECK_INTERVAL = 5 # (sec): time to wait between wakeup checks
 
 # Constants
 SERIAL_RATE = "115200" # (baud) rate of USB communication
 PWM_MAX = 255
 ARDUINO_PORT = "/dev/ttyACM0"
+ANALOG_PIN_OFFSET = 15 # the formal pin number corresponding to pin A0
 
 ###############################################################################
 # STATELESS FUNCTIONS
@@ -114,11 +114,13 @@ def transmittance_to_absorbance(transmittance, full_transmittance):
 ###############################################################################
 def connect():
     """Initializes a connection to the Arduino"""
-    return Arduino(SERIAL_RATE, port=ARDUINO_PORT)
+    a = Arduino(SERIAL_RATE, port=ARDUINO_PORT)
+    print("Connected.")
+    return a
 def set_pin_modes(a):
     """Initializes pin modes for all pins"""
     for pin in SENSOR_PINS.values():
-        a.pinMode(pin, "INPUT")
+        a.pinMode(pin + ANALOG_PIN_OFFSET, "INPUT")
     for pin in ACTUATOR_PINS.values():
         a.pinMode(pin, "OUTPUT")
 def turn_off_actuators(a, arduino_lock):
@@ -222,12 +224,18 @@ def record_heat_control(a, arduino_lock):
     temp = measure_temp(a, arduino_lock)
     heater_duty_cycle = temp_to_heating_control_effort(temp)
     end_time = datetime.now()
-    return (end_time, temp, heater_duty_cycle)
+    if np.isnan(temp):
+        return None
+    else:
+        return (end_time, temp, heater_duty_cycle)
 def record_transmittances(a, arduino_lock):
     """Returns a transmittances record."""
     (ambient, red, green) = measure_transmittances(a, arduino_lock)
     end_time = datetime.now()
-    return (end_time, ambient, red, green)
+    if np.isnan(ambient) or np.isnan(red) or np.isnan(green):
+        return None
+    else:
+        return (end_time, ambient, red, green)
 def construct_records():
     """Returns an empty records dictionary."""
     records = {
@@ -280,10 +288,9 @@ def construct_events():
     """Returns an initial events dictionary with events in initial states."""
     events = {
         "fermenter idle": threading.Event(),
-        "button pressed": threading.Event(),
         "calibrate": threading.Event(),
     }
-    #events["fermenter idle"].set()
+    events["fermenter idle"].set()
     events["calibrate"].set()
     return events
 def start_fermenter(a, records, locks, idle_event):
@@ -319,55 +326,39 @@ def monitor_temp(a, records, locks, idle_event):
     while True:
         if not idle_event.is_set():
             record = record_heat_control(a, locks["arduino"])
-            print(record)
-            with locks["arduino"] and locks["heater"]:
-                a.analogWrite(ACTUATOR_PINS["heater"],
-                              duty_cycle_to_pin_val(record[2]))
-            with locks["records"]:
-                records["temp"].append((record[0], record[1]))
-                records["heater"].append((record[0], record[2]))
-            idle_event.wait(TEMP_MEASUREMENT_INTERVAL)
+            if record:
+                print(record)
+                with locks["arduino"] and locks["heater"]:
+                    a.analogWrite(ACTUATOR_PINS["heater"],
+                                  duty_cycle_to_pin_val(record[2]))
+                with locks["records"]:
+                    records["temp"].append((record[0], record[1]))
+                    records["heater"].append((record[0], record[2]))
+                idle_event.wait(TEMP_MEASUREMENT_INTERVAL)
         else:
-            time.sleep(BUTTON_CHECK_INTERVAL)
+            time.sleep(IDLE_CHECK_INTERVAL)
 def monitor_optics(a, records, locks, calibrate_event, idle_event):
     """Continuously monitor and record fluid optical properties"""
     while True:
         if not idle_event.is_set():
             with locks["leds"]:
                 record = record_transmittances(a, locks["arduino"])
+            if record:
                 print(record)
-            with locks["records"]:
-                if calibrate_event.is_set():
-                    records["optics"]["calibrations"].append((record[0],
-                                                              record[2],
-                                                              record[3]))
-                    records["optics"]["calibration"]["red"] = record[2]
-                    records["optics"]["calibration"]["green"] = record[3]
-                    calibrate_event.clear()
-                records["optics"]["ambient"].append((record[0], record[1]))
-                records["optics"]["red"].append((record[0], record[2]))
-                records["optics"]["green"].append((record[0], record[3]))
-            idle_event.wait(LIGHT_MEASUREMENT_INTERVAL)
+                with locks["records"]:
+                    if calibrate_event.is_set():
+                        records["optics"]["calibrations"].append((record[0],
+                                                                  record[2],
+                                                                  record[3]))
+                        records["optics"]["calibration"]["red"] = record[2]
+                        records["optics"]["calibration"]["green"] = record[3]
+                        calibrate_event.clear()
+                    records["optics"]["ambient"].append((record[0], record[1]))
+                    records["optics"]["red"].append((record[0], record[2]))
+                    records["optics"]["green"].append((record[0], record[3]))
+                idle_event.wait(LIGHT_MEASUREMENT_INTERVAL)
         else:
-            time.sleep(BUTTON_CHECK_INTERVAL)
-def monitor_button(a, records, locks, idle_event, pressed_event):
-    """Continuously monitor power button state"""
-    while True:
-        with locks["arduino"]:
-            button_state = a.digitalRead(SENSOR_PINS["button"])
-        if button_state:
-            if not pressed_event.is_set():
-                if not idle_event.is_set():
-                    stop_fermenter(a, records, locks, idle_event)
-                    idle_event.set()
-                else:
-                    start_fermenter(a, records, locks, idle_event)
-                    idle_event.clear()
-                pressed_event.set()
-        else:
-            if pressed_event.is_set():
-                pressed_event.clear()
-        time.sleep(BUTTON_CHECK_INTERVAL)
+            time.sleep(IDLE_CHECK_INTERVAN)
 
 ###############################################################################
 # MAIN
@@ -381,27 +372,22 @@ def run_fermenter():
     records = construct_records()
     locks = construct_locks()
     events = construct_events()
-    button_monitor = Thread(target=monitor_button, name="button",
-                            args=(a, records, locks, events["fermenter idle"],
-                                  events["button pressed"]))
     temp_monitor = Thread(target=monitor_temp, name="temp",
                           args=(a, records, locks, events["fermenter idle"]))
     optics_monitor = Thread(target=monitor_optics, name="optics",
                             args=(a, records, locks, events["calibrate"],
                                   events["fermenter idle"]))
     threads = {
-        "button": button_monitor,
         "temp": temp_monitor,
         "optics": optics_monitor,
     }
     threads["temp"].daemon = True
     threads["optics"].daemon = True
-    threads["button"].daemon = True
     turn_off_leds(a, locks["arduino"])
     turn_off_actuators(a, locks["arduino"])
+    start_fermenter(a, records, locks, events["fermenter idle"])
     threads["temp"].start()
     threads["optics"].start()
-    #threads["button"].start()
     return (records, locks, events, threads)
 
 if __name__ == "__main__":
