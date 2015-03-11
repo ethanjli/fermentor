@@ -121,19 +121,22 @@ def set_pin_modes(a):
         a.pinMode(pin, "INPUT")
     for pin in ACTUATOR_PINS.values():
         a.pinMode(pin, "OUTPUT")
-def turn_off_actuators(a):
+def turn_off_actuators(a, arduino_lock):
     """Turns off all actuators"""
-    for pin in ACTUATOR_PINS.values():
-        a.digitalWrite(pin, "LOW")
-def turn_off_leds(a):
+    with arduino_lock:
+        for pin in ACTUATOR_PINS.values():
+            a.digitalWrite(pin, "LOW")
+def turn_off_leds(a, arduino_lock):
     """Turns off all LEDs"""
-    a.digitalWrite(ACTUATOR_PINS["red led"], "LOW")
-    a.digitalWrite(ACTUATOR_PINS["green led"], "LOW")
-def initialize_default_actuators(a):
+    with arduino_lock:
+        a.digitalWrite(ACTUATOR_PINS["red led"], "LOW")
+        a.digitalWrite(ACTUATOR_PINS["green led"], "LOW")
+def initialize_default_actuators(a, arduino_lock):
     """Turns on open-loop actuators to default states"""
-    a.digitalWrite(ACTUATOR_PINS["heater fan"], "HIGH")
-    a.analogWrite(ACTUATOR_PINS["impeller motor"],
-            duty_cycle_to_pin_val(IMPELLER_DEFAULT_DUTY))
+    with arduino_lock:
+        a.digitalWrite(ACTUATOR_PINS["heater fan"], "HIGH")
+        a.analogWrite(ACTUATOR_PINS["impeller motor"],
+                duty_cycle_to_pin_val(IMPELLER_DEFAULT_DUTY))
 
 ###############################################################################
 # DATA ACQUISITION & PROCESSING
@@ -172,15 +175,16 @@ def acquire_light(a, color, arduino_lock):
     Arguments:
         color: should be either "red", "green", or "ambient"
     """
-    turn_off_leds(a)
-    if color == "red":
-        a.digitalWrite(ACTUATOR_PINS["red led"], "HIGH")
-    elif color == "green":
-        a.digitalWrite(ACTUATOR_PINS["green led"], "HIGH")
+    turn_off_leds(a, arduino_lock)
+    with arduino_lock:
+        if color == "red":
+            a.digitalWrite(ACTUATOR_PINS["red led"], "HIGH")
+        elif color == "green":
+            a.digitalWrite(ACTUATOR_PINS["green led"], "HIGH")
     time.sleep(FILTER_STEADY_STATE_TIME)
     samples = acquire_pin(a, SENSOR_PINS["phototransistor"],
             LIGHT_SAMPLES_PER_ACQUISITION, LIGHT_SAMPLE_INTERVAL, arduino_lock)
-    turn_off_leds(a)
+    turn_off_leds(a, arduino_lock)
     return np.mean(discard_light_outliers(samples))
 def measure_temp(a, arduino_lock):
     """Returns the temperature as measured over a short time.
@@ -290,20 +294,20 @@ def start_fermenter(a, records, locks, idle_event):
         reinitialize_records(records)
         with locks["impeller motor"]:
             records["impeller"].append((datetime.now(), IMPELLER_DEFAULT_DUTY))
-            initialize_default_actuators(a)
+            initialize_default_actuators(a, locks["arduino"])
     print("Started.")
 def stop_fermenter(a, records, locks, idle_event):
     """Stops fermenter operation."""
     print("Preparing to stop...")
     idle_event.set()
     with locks["leds"]:
-        turn_off_leds(a)
+        turn_off_leds(a, locks["arduino"])
     with locks["records"]:
         records["impeller"].append((datetime.now(),
                                     records["impeller"][-1][1]))
         records["heater"].append((datetime.now(), records["heater"][-1][1]))
         with locks["impeller motor"] and locks["heater"]:
-            turn_off_actuators(a)
+            turn_off_actuators(a, locks["arduino"])
             records["impeller"].append((datetime.now(), 0))
             records["heater"].append((datetime.now(), 0))
         records["stop"] = datetime.now()
@@ -316,7 +320,7 @@ def monitor_temp(a, records, locks, idle_event):
         if not idle_event.is_set():
             record = record_heat_control(a, locks["arduino"])
             print(record)
-            with locks["heater"]:
+            with locks["arduino"] and locks["heater"]:
                 a.analogWrite(ACTUATOR_PINS["heater"],
                               duty_cycle_to_pin_val(record[2]))
             with locks["records"]:
@@ -374,8 +378,6 @@ def run_fermenter():
     a = connect()
     set_pin_modes(a)
     signal.signal(signal.SIGINT, interrupt_handler)
-    turn_off_actuators(a)
-    turn_off_leds(a)
     records = construct_records()
     locks = construct_locks()
     events = construct_events()
@@ -395,6 +397,8 @@ def run_fermenter():
     threads["temp"].daemon = True
     threads["optics"].daemon = True
     threads["button"].daemon = True
+    turn_off_leds(a, locks["arduino"])
+    turn_off_actuators(a, locks["arduino"])
     threads["temp"].start()
     threads["optics"].start()
     threads["button"].start()
