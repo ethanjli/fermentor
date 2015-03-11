@@ -56,7 +56,7 @@ GAIN = HEATER_SETPOINT_DUTY - 1 # proportional gain
 TEMP_MEASUREMENT_INTERVAL = 1 # (sec): time to wait between measurements
 
 # Button pressing
-BUTTON_CHECK_INTERVAL = 0.5 # (sec): time to wait between checks of button
+BUTTON_CHECK_INTERVAL = 1 # (sec): time to wait between checks of button
 
 # Impeller
 IMPELLER_DEFAULT_DUTY = 0.2 # default duty cycle of the impeller
@@ -138,7 +138,7 @@ def initialize_default_actuators(a):
 ###############################################################################
 # DATA ACQUISITION & PROCESSING
 ###############################################################################
-def acquire_pin(a, pin, nsamples, sample_interval):
+def acquire_pin(a, pin, nsamples, sample_interval, arduino_lock):
     """Acquires a pin value as sampled over a time interval.
     Returns as a Numpy array.
 
@@ -151,17 +151,18 @@ def acquire_pin(a, pin, nsamples, sample_interval):
     for i in range(nsamples):
         if i != 0:
             time.sleep(sample_interval)
-        samples.append(a.analogRead(pin))
+        with arduino_lock:
+            samples.append(a.analogRead(pin))
     return np.array(samples)
-def acquire_temp(a):
+def acquire_temp(a, arduino_lock):
     """Returns the temperature as sampled over a short time interval.
     Discards outliers and returns the mean of the remaining samples.
     Temperature is returned as a pin value.
     """
     samples = acquire_pin(a, SENSOR_PINS["thermometer"],
-            TEMP_SAMPLES_PER_ACQUISITION, TEMP_SAMPLE_INTERVAL)
+            TEMP_SAMPLES_PER_ACQUISITION, TEMP_SAMPLE_INTERVAL, arduino_lock)
     return np.mean(discard_temp_outliers(samples))
-def acquire_light(a, color):
+def acquire_light(a, color, arduino_lock):
     """Returns the light intensity as sampled over a short time interval.
     Light intensity is returned as an absolute pin value.
     Turns off the green LED and turns on the LED and waits for filter response
@@ -178,15 +179,15 @@ def acquire_light(a, color):
         a.digitalWrite(ACTUATOR_PINS["green led"], "HIGH")
     time.sleep(FILTER_STEADY_STATE_TIME)
     samples = acquire_pin(a, SENSOR_PINS["phototransistor"],
-            LIGHT_SAMPLES_PER_ACQUISITION, LIGHT_SAMPLE_INTERVAL)
+            LIGHT_SAMPLES_PER_ACQUISITION, LIGHT_SAMPLE_INTERVAL, arduino_lock)
     turn_off_leds(a)
     return np.mean(discard_light_outliers(samples))
-def measure_temp(a):
+def measure_temp(a, arduino_lock):
     """Returns the temperature as measured over a short time.
     Temperature is returned in deg C.
     """
-    return pin_val_to_temp(acquire_temp(a))
-def measure_transmittances(a):
+    return pin_val_to_temp(acquire_temp(a, arduino_lock))
+def measure_transmittances(a, arduino_lock):
     """Returns normalized light intensities as acquired over an extended time.
     Light intensity is normalized to the ambient light.
     Acquisition of different colors is time multiplexed.
@@ -200,7 +201,8 @@ def measure_transmittances(a):
     }
     for _ in range(LIGHT_ACQUISITIONS_PER_MEASUREMENT):
         for color in acquisitions.keys():
-            acquisitions[color].append(int(acquire_light(a, color)))
+            acquisitions[color].append(int(acquire_light(a, color,
+                                                         arduino_lock)))
     ambient = np.mean(discard_light_outliers(np.array(acquisitions["ambient"])))
     red = np.mean(discard_light_outliers(np.array(acquisitions["red"])))
     green = np.mean(discard_light_outliers(np.array(acquisitions["green"])))
@@ -209,17 +211,17 @@ def measure_transmittances(a):
 ###############################################################################
 # DATA LOGGING
 ###############################################################################
-def record_heat_control(a):
+def record_heat_control(a, arduino_lock):
     """Returns a heat control record.
     Also adjusts the heating control effort and records that.
     """
-    temp = measure_temp(a)
+    temp = measure_temp(a, arduino_lock)
     heater_duty_cycle = temp_to_heating_control_effort(temp)
     end_time = datetime.now()
     return (end_time, temp, heater_duty_cycle)
-def record_transmittances(a):
+def record_transmittances(a, arduino_lock):
     """Returns a transmittances record."""
-    (ambient, red, green) = measure_transmittances(a)
+    (ambient, red, green) = measure_transmittances(a, arduino_lock)
     end_time = datetime.now()
     return (end_time, ambient, red, green)
 def construct_records():
@@ -263,6 +265,7 @@ def reinitialize_records(records):
 def construct_locks():
     """Returns an initial locks dictionary."""
     locks = {
+        "arduino": threading.Lock(),
         "records": threading.Lock(),
         "impeller motor": threading.Lock(),
         "heater": threading.Lock(),
@@ -307,7 +310,7 @@ def monitor_temp(a, records, locks, idle_event):
     """
     while True:
         if not idle_event.is_set():
-            record = record_heat_control(a)
+            record = record_heat_control(a, locks["arduino"])
             print(record)
             with locks["heater"]:
                 a.analogWrite(ACTUATOR_PINS["heater"],
@@ -323,7 +326,7 @@ def monitor_optics(a, records, locks, calibrate_event, idle_event):
     while True:
         if not idle_event.is_set():
             with locks["leds"]:
-                record = record_transmittances(a)
+                record = record_transmittances(a, locks["arduino"])
                 print(record)
             with locks["records"]:
                 if calibrate_event.is_set():
@@ -342,7 +345,8 @@ def monitor_optics(a, records, locks, calibrate_event, idle_event):
 def monitor_button(a, records, locks, idle_event, pressed_event):
     """Continuously monitor power button state"""
     while True:
-        button_state = a.digitalRead(SENSOR_PINS["button"])
+        with locks["arduino"]:
+            button_state = a.digitalRead(SENSOR_PINS["button"])
         if button_state:
             if not pressed_event.is_set():
                 if not idle_event.is_set():
