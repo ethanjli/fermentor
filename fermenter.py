@@ -40,7 +40,7 @@ LIGHT_MEASUREMENT_INTERVAL = 20 # (sec): time to wait between measurements
 LIGHT_SAMPLES_PER_ACQUISITION = 10
 LIGHT_SAMPLE_INTERVAL = 0.1 # (sec): time to wait between each sampling
 LIGHT_OUTLIER_THRESHOLD = 50 # maximum allowed deviation from median
-LIGHT_ACQUISITIONS_PER_MEASUREMENT = 10 # robustness to ambient light variation
+LIGHT_ACQUISITIONS_PER_MEASUREMENT = 5 # robustness to ambient light variation
 
 # Temperature noise filtering
 TEMP_SAMPLES_PER_ACQUISITION = 10
@@ -200,7 +200,7 @@ def measure_transmittances(a):
     }
     for _ in range(LIGHT_ACQUISITIONS_PER_MEASUREMENT):
         for color in acquisitions.keys():
-            acquisitions[color].append(int(acquire_light(a, color))
+            acquisitions[color].append(int(acquire_light(a, color)))
     ambient = np.mean(discard_light_outliers(np.array(acquisitions["ambient"])))
     red = np.mean(discard_light_outliers(np.array(acquisitions["red"])))
     green = np.mean(discard_light_outliers(np.array(acquisitions["green"])))
@@ -323,8 +323,8 @@ def monitor_optics(a, records, locks, calibrate_event, idle_event):
     while True:
         if not idle_event.is_set():
             with locks["leds"]:
-                print(record)
                 record = record_transmittances(a)
+                print(record)
             with locks["records"]:
                 if calibrate_event.is_set():
                     records["optics"]["calibrations"].append((record[0],
