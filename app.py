@@ -28,7 +28,7 @@ threads = {}
 ###############################################################################
 @socketio.on("socket event", namespace="/socket")
 def handle_socket_event(message):
-    print(message)
+    print(message["data"])
 
 ###############################################################################
 # THREADS
@@ -67,6 +67,10 @@ def index():
                                   args=(records, locks))
         threads["stats"].start()
     return send_from_directory("static", "dashboard.html")
+
+@app.route("/client.js"):
+    """Deliver the client-side scripting"""
+    return send_from_directory("static", "client.js")
 
 ###############################################################################
 # MAIN
