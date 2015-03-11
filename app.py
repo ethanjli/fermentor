@@ -14,7 +14,7 @@ logging.basicConfig()
 ###############################################################################
 # PARAMETERS
 ###############################################################################
-STATS_INTERVAL = 10 # (sec): time to wait between updating statas
+STATS_INTERVAL = 2 # (sec): time to wait between updating statas
 
 ###############################################################################
 # GLOBALS
