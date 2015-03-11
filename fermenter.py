@@ -263,14 +263,14 @@ def reinitialize_records(records):
     """
     records["start"] = datetime.now()
     records["stop"] = None
-    records["temp"][:] = []
-    records["heater"][:] = []
-    records["impeller"][:] = []
+    records["temp"][:] = [None]
+    records["heater"][:] = [None]
+    records["impeller"][:] = [None]
     records["optics"]["calibration"]["red"] = None
     records["optics"]["calibration"]["green"] = None
-    records["optics"]["calibrations"][:] = []
-    records["optics"]["ambient"][:] = []
-    records["optics"]["red"][:] = []
+    records["optics"]["calibrations"][:] = [None]
+    records["optics"]["ambient"][:] = [None]
+    records["optics"]["red"][:] = [None]
 
 ###############################################################################
 # THREADS

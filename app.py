@@ -4,9 +4,11 @@ monkey.patch_all()
 
 from threading import Thread
 import time
+import logging
 from flask import Flask, send_from_directory
 from flask.ext.socketio import SocketIO, emit
 import fermenter
+logging.basicConfig()
 
 ###############################################################################
 # PARAMETERS
