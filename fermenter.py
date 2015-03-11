@@ -242,18 +242,18 @@ def construct_records():
     records = {
         "start": datetime.now(),
         "stop": None,
-        "temp": [],
-        "heater": [],
-        "impeller": [],
+        "temp": [None],
+        "heater": [None],
+        "impeller": [None],
         "optics": {
             "calibration": {
                 "red": None,
                 "green": None,
             },
-            "calibrations": [],
-            "ambient": [],
-            "red": [],
-            "green": [],
+            "calibrations": [None],
+            "ambient": [None],
+            "red": [None],
+            "green": [None],
         },
     }
     return records
