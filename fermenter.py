@@ -283,7 +283,7 @@ def construct_events():
         "button pressed": threading.Event(),
         "calibrate": threading.Event(),
     }
-    events["fermenter idle"].set()
+    #events["fermenter idle"].set()
     events["calibrate"].set()
     return events
 def start_fermenter(a, records, locks, idle_event):
@@ -401,7 +401,7 @@ def run_fermenter():
     turn_off_actuators(a, locks["arduino"])
     threads["temp"].start()
     threads["optics"].start()
-    threads["button"].start()
+    #threads["button"].start()
     return (records, locks, events, threads)
 
 if __name__ == "__main__":
