@@ -68,7 +68,8 @@ def index():
         threads["stats"].start()
     return send_from_directory("static", "dashboard.html")
 
-@app.route("/client.js"):
+@app.route("/client.js")
+def client():
     """Deliver the client-side scripting"""
     return send_from_directory("static", "client.js")
 
