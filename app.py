@@ -2,50 +2,57 @@
 from gevent import monkey
 monkey.patch_all()
 
-import platform
-import subprocess
 from threading import Thread
 import time
-from datetime import timedelta
-from flask import Flask, render_template, send_from_directory
-from flask.ext.socketio import SocketIO, emit, disconnect
+from flask import Flask, send_from_directory
+from flask.ext.socketio import SocketIO, emit
+import fermenter
 
+###############################################################################
+# PARAMETERS
+###############################################################################
+STATS_INTERVAL = 10 # (sec): time to wait between updating statas
+
+###############################################################################
+# GLOBALS
+###############################################################################
 app = Flask(__name__)
 socketio = SocketIO(app)
-thread = {}
-
-def get_uptime():
-    with open('/proc/uptime', 'r') as f:
-        uptime_seconds = float(f.readline().split()[0])
-        return str(timedelta(seconds=round(uptime_seconds)))
-
-def uptime_thread():
-    while True:
-        time.sleep(0.5)
-        socketio.emit("scheduled uptime update", {"data": get_uptime()}, namespace="/socket")
-
-def get_temperature():
-    return subprocess.check_output(["/opt/vc/bin/vcgencmd", "measure_temp"]).decode('ascii').split("=")[1][:-3]
-
-def temperature_thread():
-    while True:
-        time.sleep(5)
-        socketio.emit("scheduled temperature update", {"data": get_temperature(), "time": time.ctime()}, namespace="/socket")
 
 @app.route("/")
 def index():
-    global thread
-    if "temperature" not in thread.keys():
-        thread["temperature"] = Thread(target=temperature_thread)
-        thread["temperature"].start()
-    if "uptime" not in thread.keys():
-        thread["uptime"] = Thread(target=uptime_thread)
-        thread["uptime"].start()
-    return send_from_directory("static", "live_stats.html")
+    return send_from_directory("static", "dashboard.html")
 
-@socketio.on("socket event", namespace="/socket")
-def test_message(message):
-    emit("global server announcement", {"data": "A client has connected!"}, broadcast=True);
+###############################################################################
+# THREADS
+###############################################################################
+def update_stats(records, locks):
+    while True:
+        stats = {
+            "start": records["start"],
+            "stop": records["stop"],
+            "temp": records["temp"][-1],
+            "heater": records["heater"][-1],
+            "impeller": records["impeller"][-1],
+            "optics": {
+                "calibration": {
+                    "red": records["optics"]["calibration"]["red"],
+                    "green": records["optics"]["calibration"]["green"],
+                },
+                "calibrations": records["optics"]["calibrations"],
+                "ambient": records["optics"]["ambient"][-1],
+                "red": records["optics"]["red"][-1],
+                "green": records["optics"]["green"][-1],
+            },
+        }
+        socketio.emit("stats update", stats)
+        time.sleep(STATS_INTERVAL)
 
+###############################################################################
+# MAIN
+###############################################################################
 if __name__ == "__main__":
+    (records, locks, events, threads) = fermenter.run_fermenter()
     socketio.run(app, host='0.0.0.0', port=80)
+    stats_update = Thread(target=update_stats, name="stats",
+                          args=(records, locks))

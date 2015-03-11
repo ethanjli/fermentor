@@ -209,7 +209,7 @@ def measure_transmittances(a, arduino_lock):
         for color in acquisitions.keys():
             light = acquire_light(a, color, arduino_lock)
             if not np.isnan(light):
-                acquisitions[color].append(int(light)))
+                acquisitions[color].append(int(light))
     ambient = np.mean(discard_light_outliers(np.array(acquisitions["ambient"])))
     red = np.mean(discard_light_outliers(np.array(acquisitions["red"])))
     green = np.mean(discard_light_outliers(np.array(acquisitions["green"])))
