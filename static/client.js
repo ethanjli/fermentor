@@ -11,7 +11,7 @@ function start_text(data) {
   if (data) {
     return "Fermenter started at: " + data;
   } else {
-    return "Fermenter has not yet started.";"
+    return "Fermenter has not yet started.";
   }
 }
 function stop_text(data) {
