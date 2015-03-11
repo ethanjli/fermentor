@@ -28,7 +28,7 @@ threads = {}
 ###############################################################################
 @socketio.on("socket event", namespace="/socket")
 def handle_socket_event(message):
-    print(message.data)
+    print(message)
 
 ###############################################################################
 # THREADS
