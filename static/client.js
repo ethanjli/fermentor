@@ -124,22 +124,42 @@ $(document).ready(function () {
     $('#green').text(green_text(msg.optics.calibration.green, msg.optics.green));
   });
   socket.on("optics plot update", function(msg) {
-    $('#optics_plot_cache').attr("data", "/plots/optics?" + msg.time);
-    $('#environ_plot_cache').attr("data", "/plots/environ?" + msg.time);
-  });
-  socket.on("temp plot update", function(msg) {
-    $('#temp_plot_cache').attr("data", "/plots/temp?" + msg.time);
-    //var header = [['Time (h)', 'Temperature (°C)']];
     var data = new google.visualization.DataTable();
     data.addColumn('number', 'Time (h)');
-    data.addColumn('number', 'Temperature (deg C)');
-    data.addRows(msg.temp);
-    var options = {'title': 'Temperature', 'width': 600, 'height': 320};
+    data.addColumn('number', 'Red (OD)');
+    data.addColumn('number', 'Green');
+    data.addRows(msg.redgreen);
+    var options = {'title': 'Relative Absorbances', 'width': 600, 'height': 320};
+    var chart = new google.charts.Line(document.getElementById('optics_plot'));
+    chart.draw(data, options);
+  });
+  socket.on("environ plot update", function(msg) {
+    var data = new google.visualization.DataTable();
+    data.addColumn('number', 'Time (h)');
+    data.addColumn('number', 'Ambient Light');
+    data.addRows(msg.ambient);
+    var options = {'title': 'Environment', 'width': 600, 'height': 320};
+    var chart = new google.charts.Line(document.getElementById('environ_plot'));
+    chart.draw(data, options);
+  });
+  socket.on("temp plot update", function(msg) {
+    var data = new google.visualization.DataTable();
+    data.addColumn('number', 'Time (h)');
+    data.addColumn('number', 'Temperature (°C)');
+    data.addColumn('number', 'Heater Duty (Decimal)');
+    data.addRows(msg.tempheater);
+    var options = {'title': 'Temperature Control', 'width': 600, 'height': 320};
     var chart = new google.charts.Line(document.getElementById('temp_plot'));
     chart.draw(data, options);
   });
-  socket.on("duty cycles plot update", function(msg) {
-    $('#duty_cycles_plot_cache').attr("data", "/plots/duty_cycles?" + msg.time);
+  socket.on("impeller plot update", function(msg) {
+    var data = new google.visualization.DataTable();
+    data.addColumn('number', 'Time (h)');
+    data.addColumn('number', 'Impeller Duty (Decimal)');
+    data.addRows(msg.impeller);
+    var options = {'title': 'Environment', 'width': 600, 'height': 320};
+    var chart = new google.charts.Line(document.getElementById('impeller_plot'));
+    chart.draw(data, options);
   });
 });
 

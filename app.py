@@ -112,19 +112,21 @@ def update_plots(records, locks):
             start = records["start"]
             if rerender_optics:
                 socketio.emit("optics plot update", {
-                    "red": records["optics"]["red"],
-                    "green": records["optics"]["green"],
+                    "redgreen": [x + (z,) for x, (y, z) in
+                                 zip(records["optics"]["red"],
+                                     records["optics"]["green"])],
                 }, namespace="/socket")
                 socketio.emit("environ plot update", {
                     "ambient": records["optics"]["ambient"]
                 }, namespace="/socket")
             if rerender_temp:
                 socketio.emit("temp plot update", {
-                    "temp": records["temp"]
+                    "tempheat": [x + (z,) for x, (y, z) in
+                                 zip(records["temp"],
+                                     records["heater"])],
                 }, namespace="/socket")
             if rerender_duty_cycles:
                 socketio.emit("duty cycles plot update", {
-                    "heater": records["heater"],
                     "impeller": records["impeller"],
                 }, namespace="/socket")
         time.sleep(PLOTS_INTERVAL)
