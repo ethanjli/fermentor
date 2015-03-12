@@ -74,22 +74,25 @@ def initialize_plots():
         "optics": optics,
     }
     return optics
-def update_plots(records, locks, plots):
+#def update_plots(records, locks, plots):
+def update_plots(records, locks):
+    optics_plot = XY(stroke=True)
+    optics_plot.title = "Optical Measurements"
     while True:
         #rerender = False
         rerender = True
         with (locks["records"]):
-            calib_red = records["optics"]["calibration"]["red"]
-            red = records["optics"]["red"]
-            calib_green = records["optics"]["calibration"]["red"]
-            green = records["optics"]["red"]
+            #calib_red = records["optics"]["calibration"]["red"]
+            #red = records["optics"]["red"]
+            #calib_green = records["optics"]["calibration"]["red"]
+            #green = records["optics"]["red"]
             #if red and calib_red:
                 #plots["optics"].add("OD", trans_to_abs(calib_red, red))
                 #rerender = True
             #if green and calib_red:
                 #plots["optics"].add("Green", trans_to_abs(calib_green, green))
                 #rerender = True
-            plots["optics"].add("Placeholder", [(1, 1), (2, 4), (3, 9), (4, 16)])
+            optics_plot.add("Placeholder", [(1, 1), (2, 4), (3, 9), (4, 16)])
         if rerender:
             plots["optics"].render_to_file(PLOTS_DIR + "optics.svg")
             socketio.emit("plots update", {"time": datetime.now()},
@@ -108,9 +111,11 @@ def index():
                                   args=(records, locks))
         threads["stats"].start()
     if "plot" not in threads.keys():
-        plots = initialize_plots()
+        #plots = initialize_plots()
+        #threads["plots"] = Thread(target=update_plots, name="plots",
+        #                          args=(records, locks, plots))
         threads["plots"] = Thread(target=update_plots, name="plots",
-                                  args=(records, locks, plots))
+                                  args=(records, locks))
         threads["plots"].start()
     return send_from_directory("static", "dashboard.html")
 
