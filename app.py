@@ -28,7 +28,7 @@ plot_config.value_formatter = lambda x: "%.2f" %x
 plot_config.stroke = True
 plot_config.fill = True
 plot_config.width = 600
-plot_config.height = 400
+plot_config.height = 350
 plot_config.legend_at_bottom =True
 plot_config.style = LightColorizedStyle
 
