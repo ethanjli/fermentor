@@ -82,7 +82,7 @@ def plot_optics(records, locks):
     optics_plot = XY(stroke=True)
     optics_plot.title = "Optical Measurements"
     optics_plot.x_title = "Time (h)"
-    temp_plot.y_title = "Relative Absorbance"
+    optics_plot.y_title = "Relative Absorbance"
     optics_plot.legend_at_bottom = True
     optics_plot.value_formatter = lambda x: "%.2f" % x
     optics_plot.fill = True
