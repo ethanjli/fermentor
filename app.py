@@ -28,6 +28,7 @@ plot_config.stroke = True
 plot_config.fill = True
 plot_config.width = 400
 plot_config.height = 400
+plot_config.legend_at_bottom =True
 
 ###############################################################################
 # GLOBALS
@@ -97,11 +98,11 @@ def plot_optics(records, locks):
         red_abs = trans_to_abs(calib_red, red)
         green_abs = trans_to_abs(calib_green, green)
         if red_abs:
-            optics_plot.add("OD", datetime_to_hours(records["start"], red_abs))
+            optics_plot.add("Red (OD)", datetime_to_hours(records["start"],
+                                                          red_abs))
         if green_abs:
             optics_plot.add("Green", datetime_to_hours(records["start"],
-                                                       green_abs),
-                            secondary=True)
+                                                       green_abs))
     return optics_plot
 def plot_temp(records, locks):
     temp_plot = XY(plot_config)
