@@ -8,7 +8,7 @@ function duty_cycle_to_percent(duty_cycle) {
 
 // Strings
 function time_text(data) {
-  return "Updated " + data[0]".";
+  return "Updated " + data[0] + ".";
 }
 function start_text(data) {
   if (data) {
