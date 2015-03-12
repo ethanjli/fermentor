@@ -3,7 +3,7 @@ function absorbance(calib, transmittance) {
   return (calib - transmittance) / calib;
 }
 function duty_cycle_to_percent(duty_cycle) {
-  return ~~(duty_cycle * 100)
+  return (duty_cycle * 100).toFixed(0);
 }
 
 // Strings
