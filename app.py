@@ -104,7 +104,7 @@ def plot_temp(records, locks):
     temp_plot = XY(stroke=True)
     temp_plot.title = "Temperature"
     temp_plot.x_title = "Time (h)"
-    temp_plot.y_title = "Temperature (°C)"
+    temp_plot.y_title = "Temperature (deg C)"
     temp_plot.legend_at_bottom = True
     temp_plot.value_formatter = lambda x: "%.2f" % x
     temp_plot.fill = True
