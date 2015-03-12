@@ -9,7 +9,7 @@ import logging
 from flask import Flask, send_from_directory
 from flask.ext.socketio import SocketIO, emit
 import pygal
-from pygal import DateY
+from pygal import XY
 import os
 import fermenter
 
@@ -45,7 +45,7 @@ def update_stats(records, locks):
             stats = {
                 "start": records["start"],
                 "stop": records["stop"],
-                "now": datetime.now(),
+                "since": (datetime.now() - records["stop"]).total_seconds / 3600,
                 "temp": records["temp"][-1],
                 "heater": records["heater"][-1],
                 "impeller": records["impeller"][-1],
@@ -69,6 +69,14 @@ def trans_to_abs(calib, transmittances):
         if entry and calib:
             absorbances.append((entry[0], fermenter.get_abs(calib, entry[1])))
     return absorbances
+def datetime_to_hours(start, series):
+    """Converts datetimes into hours."""
+    converted = []
+    for entry in series:
+        if entry:
+            converted.append(((entry[0] - start).total_seconds() / 3600,
+                              entry[1]))
+    return converted
 def update_plots(records, locks):
     temp_last_update = None
     optics_last_update = None
@@ -86,7 +94,7 @@ def update_plots(records, locks):
                 temp_last_update = records["temp"][-1][0]
                 rerender_temp = True
         if rerender_optics:
-            optics_plot = DateY(stroke=True)
+            optics_plot = XY(stroke=True)
             optics_plot.title = "Optical Measurements"
             with locks["records"]:
                 calib_red = records["optics"]["calibration"]["red"]
@@ -96,17 +104,22 @@ def update_plots(records, locks):
                 red_abs = trans_to_abs(calib_red, red)
                 green_abs = trans_to_abs(calib_green, green)
                 if red_abs:
-                    optics_plot.add("OD", red_abs)
+                    optics_plot.add("OD", datetime_to_hours(records["start"],
+                                                            red_abs))
                 if green_abs:
-                    optics_plot.add("Green", green_abs)
+                    optics_plot.add("Green",
+                                    datetime_to_hours(records["start"],
+                                                      green_abs))
             #os.remove(PLOTS_DIR + "optics.svg")
             optics_plot.render_to_file(PLOTS_DIR + "optics.svg")
         if rerender_temp:
-            temp_plot = DateY(stroke=True)
+            temp_plot = XY(stroke=True)
             temp_plot.title = "Temperature control"
             with locks["records"]:
                 if records["temp"][-1]:
-                    temp_plot.add("Temperature", records["temp"])
+                    temp_plot.add("Temperature",
+                                  datetime_to_hours(records["start"],
+                                                    records["temp"]))
             #os.remove(PLOTS_DIR + "optics.svg")
             temp_plot.render_to_file(PLOTS_DIR + "temp.svg")
         if rerender_optics or rerender_temp:
