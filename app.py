@@ -70,10 +70,10 @@ def trans_to_abs(calib, transmittances):
             absorbances.append((entry[0], fermenter.get_abs(calib, entry[1])))
     return absorbances
 def update_plots(records, locks):
-    optics_plot = DateY(stroke=True)
-    optics_plot.title = "Optical Measurements"
     while True:
         rerender = False
+        optics_plot = DateY(stroke=True)
+        optics_plot.title = "Optical Measurements"
         with (locks["records"]):
             calib_red = records["optics"]["calibration"]["red"]
             red = records["optics"]["red"]
@@ -82,15 +82,13 @@ def update_plots(records, locks):
             red_abs = trans_to_abs(calib_red, red)
             green_abs = trans_to_abs(calib_green, green)
             if red_abs:
-                optics_plot.remove("OD")
                 optics_plot.add("OD", red_abs)
                 rerender = True
             if green_abs:
-                optics_plot.remove("Green")
                 optics_plot.add("Green", green_abs)
                 rerender = True
         if rerender:
-            os.remove(PLOTS_DIR + "optics.svg")
+            #os.remove(PLOTS_DIR + "optics.svg")
             optics_plot.render_to_file(PLOTS_DIR + "optics.svg")
             socketio.emit("plots update", {"time": datetime.now()},
                           namespace="/socket")
