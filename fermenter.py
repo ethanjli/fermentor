@@ -277,7 +277,6 @@ def construct_records():
                 "red": None,
                 "green": None,
             },
-            "calibrations": [None],
             "ambient": [None],
             "red": [None],
             "green": [None],
@@ -295,7 +294,6 @@ def reinitialize_records(records):
     records["impeller"][:] = [None]
     records["optics"]["calibration"]["red"] = None
     records["optics"]["calibration"]["green"] = None
-    records["optics"]["calibrations"][:] = [None]
     records["optics"]["ambient"][:] = [None]
     records["optics"]["red"][:] = [None]
 
@@ -329,6 +327,8 @@ def start_fermenter(a, records, locks, idle_event):
         reinitialize_records(records)
         with locks["impeller motor"]:
             start = records["start"]
+            if records["impeller"][-1] is None:
+                records["impeller"].pop()
             records["impeller"].append((hours_offset(start, datetime.now()),
                                         IMPELLER_DEFAULT_DUTY))
             initialize_default_actuators(a, locks["arduino"])
@@ -347,6 +347,10 @@ def stop_fermenter(a, records, locks, idle_event):
                                   records["heater"][-1][1]))
         with locks["impeller motor"] and locks["heater"]:
             turn_off_actuators(a, locks["arduino"])
+            if records["impeller"][-1] is None:
+                records["impeller"].pop()
+            if records["heater"][-1] is None:
+                records["heater"].pop()
             records["impeller"].append((hours_offset(start, datetime.now()),
                                         0))
             records["heater"].append((hours_offset(start, datetime.now()), 0))
@@ -367,6 +371,10 @@ def monitor_temp(a, records, locks, idle_event):
                     a.analogWrite(ACTUATOR_PINS["heater"],
                                   duty_cycle_to_pin_val(record[2]))
                 with locks["records"]:
+                    if records["temp"][-1] is None:
+                        records["temp"].pop()
+                    if records["heater"][-1] is None:
+                        records["heater"].pop()
                     records["temp"].append((record[0], record[1]))
                     records["heater"].append((record[0], record[2]))
                 idle_event.wait(TEMP_MEASUREMENT_INTERVAL)
@@ -383,12 +391,15 @@ def monitor_optics(a, records, locks, calibrate_event, idle_event):
             if record:
                 with locks["records"]:
                     if calibrate_event.is_set():
-                        records["optics"]["calibrations"].append((record[0],
-                                                                  record[2],
-                                                                  record[3]))
                         records["optics"]["calibration"]["red"] = record[2]
                         records["optics"]["calibration"]["green"] = record[3]
                         calibrate_event.clear()
+                    if records["optics"]["ambient"][-1] is None:
+                        records["optics"]["ambient"].pop()
+                    if records["optics"]["red"][-1] is None:
+                        records["optics"]["red"].pop()
+                    if records["optics"]["green"][-1] is None:
+                        records["optics"]["green"].pop()
                     records["optics"]["ambient"].append((record[0], record[1]))
                     records["optics"]["red"].append((record[0], record[2]))
                     records["optics"]["green"].append((record[0], record[3]))

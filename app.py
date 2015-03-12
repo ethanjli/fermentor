@@ -46,6 +46,8 @@ def handle_start(message):
 def handle_impeller(message):
     with locks["records"]:
         if message["data"]:
+            if records["impeller"][-1] is None:
+                records["impeller"].pop()
             records["impeller"].append((datetime.now(),
                                         records["impeller"][-1][1]))
             fermenter.set_impeller(a, locks["arduino"], float(message["data"]))
@@ -107,6 +109,8 @@ def update_plots(records, locks):
                         duty_cycles_last_update < records["heater"][-1][0]):
                     duty_cycles_last_update = records["heater"][-1][0]
                     rerender_duty_cycles = True
+                    if records["impeller"][-1] is None:
+                        records["impeller"].pop()
                     records["impeller"].append((datetime.now(),
                                                 records["impeller"][-1][1]))
             start = records["start"]
@@ -122,8 +126,7 @@ def update_plots(records, locks):
             if rerender_temp:
                 socketio.emit("temp plot update", {
                     "tempheat": [x + (z,) for x, (y, z) in
-                                 zip(records["temp"],
-                                     records["heater"])],
+                                 zip(records["temp"], records["heater"])],
                 }, namespace="/socket")
             if rerender_duty_cycles:
                 socketio.emit("impeller plot update", {
