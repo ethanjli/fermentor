@@ -78,10 +78,10 @@ def update_plots(records, locks):
             calib_green = records["optics"]["calibration"]["red"]
             green = records["optics"]["red"]
             if red and calib_red:
-                plots["optics"].add("OD", trans_to_abs(calib_red, red))
+                optics_plot.add("OD", trans_to_abs(calib_red, red))
                 rerender = True
             if green and calib_red:
-                plots["optics"].add("Green", trans_to_abs(calib_green, green))
+                optics_plot.add("Green", trans_to_abs(calib_green, green))
                 rerender = True
         if rerender:
             optics_plot.render_to_file(PLOTS_DIR + "optics.svg")
