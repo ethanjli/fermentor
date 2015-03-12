@@ -28,7 +28,7 @@ plot_config.value_formatter = lambda x: "%.2f" %x
 plot_config.stroke = True
 plot_config.fill = True
 plot_config.width = 600
-plot_config.height = 300
+plot_config.height = 320
 plot_config.legend_at_bottom =True
 plot_config.style = LightColorizedStyle
 
@@ -50,13 +50,15 @@ def handle_stop(message):
     if not events["fermenter idle"].is_set():
         events["fermenter idle"].set()
         fermenter.stop_fermenter(a, records, locks, events["fermenter idle"])
+def delete_plots():
+    os.remove("static/plots/temp.svg")
+    os.remove("static/plots/optics.svg")
+    os.remove("static/plots/duty_cycles.svg")
+    os.remove("static/plots/environ.svg")
 @socketio.on("fermenter start", namespace="/socket")
 def handle_start(message):
     if events["fermenter idle"].is_set():
         events["fermenter idle"].clear()
-        os.remove("static/plots/temp.svg")
-        os.remove("static/plots/optics.svg")
-        os.remove("static/plots/duty_cycles.svg")
         fermenter.start_fermenter(a, records, locks, events["fermenter idle"])
 @socketio.on("impeller set", namespace="/socket")
 def handle_impeller(message):
@@ -257,4 +259,5 @@ def plots(plot):
 ###############################################################################
 if __name__ == "__main__":
     (a, records, locks, events, threads) = fermenter.run_fermenter()
+    delete_plots()
     socketio.run(app, host='0.0.0.0', port=80)
