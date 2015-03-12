@@ -52,7 +52,8 @@ def handle_impeller(message):
                                                                datetime.now()),
                                         records["impeller"][-1][1]))
             fermenter.set_impeller(a, locks["arduino"], float(message["data"]))
-            records["impeller"].append((datetime.now(),
+            records["impeller"].append((fermenter.hours_offset(records["start"],
+                                                               datetime.now()),
                                         float(message["data"])))
 @socketio.on("recalibrate optics", namespace="/socket")
 def handle_recalibrate(message):
