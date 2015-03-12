@@ -10,6 +10,7 @@ from flask import Flask, send_from_directory
 from flask.ext.socketio import SocketIO, emit
 import pygal
 from pygal import XY, Config
+from pygal.style import LightColorizedStyle
 import os
 import fermenter
 
@@ -29,6 +30,7 @@ plot_config.fill = True
 plot_config.width = 600
 plot_config.height = 400
 plot_config.legend_at_bottom =True
+plot_config.style = LightColorizedStyle
 
 ###############################################################################
 # GLOBALS
