@@ -392,7 +392,7 @@ def run_fermenter():
     turn_off_actuators(a, locks["arduino"])
     start_fermenter(a, records, locks, events["fermenter idle"])
     threads["temp"].start()
-    threads["optics"].start()
+    #threads["optics"].start()
     return (a, records, locks, events, threads)
 
 if __name__ == "__main__":

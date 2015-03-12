@@ -51,10 +51,14 @@ def handle_stop(message):
         events["fermenter idle"].set()
         fermenter.stop_fermenter(a, records, locks, events["fermenter idle"])
 def delete_plots():
-    os.remove("static/plots/temp.svg")
-    os.remove("static/plots/optics.svg")
-    os.remove("static/plots/duty_cycles.svg")
-    os.remove("static/plots/environ.svg")
+    if os.path.isfile("static/plots/temp.svg"):
+        os.remove("static/plots/temp.svg")
+    if os.path.isfile("static/plots/optics.svg"):
+        os.remove("static/plots/optics.svg")
+    if os.path.isfile("static/plots/duty_cycles.svg"):
+        os.remove("static/plots/duty_cycles.svg")
+    if os.path.isfile("static/plots/environ.svg"):
+        os.remove("static/plots/environ.svg")
 @socketio.on("fermenter start", namespace="/socket")
 def handle_start(message):
     if events["fermenter idle"].is_set():
