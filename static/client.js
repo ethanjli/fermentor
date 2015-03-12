@@ -87,12 +87,10 @@ $(document).ready(function () {
     $('#red').text(red_text(msg.optics.calibration.red, msg.optics.red));
     $('#green').text(green_text(msg.optics.calibration.green, msg.optics.green));
   });
-  socket.on("stats update", function(msg) {
-    if (msg.type === "optics") {
-      $('#optics_plot').attr("data", "/plots/optics?" + msg.time);
-    }
-    if (msg.type === "temp") {
-      $('#temp_plot').attr("data", "/plots/temp?" + msg.time);
-    }
+  socket.on("optics plot update", function(msg) {
+    $('#optics_plot').attr("data", "/plots/optics?" + msg.time);
+  });
+  socket.on("temp plot update", function(msg) {
+    $('#temp_plot').attr("data", "/plots/temp?" + msg.time);
   });
 });

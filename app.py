@@ -20,7 +20,7 @@ logging.basicConfig()
 ###############################################################################
 STATS_INTERVAL = 2 # (sec): time to wait between updating stats
 PLOTS_DIR = "static/plots/"
-PLOTS_INTERVAL = 2 # (sec): time to wait between updating plots
+PLOTS_INTERVAL = 5 # (sec): time to wait between updating plots
 
 ###############################################################################
 # GLOBALS
@@ -121,15 +121,11 @@ def update_plots(records, locks):
         if rerender_optics:
             plot_optics(records, locks).render_to_file(PLOTS_DIR +
                                                        "optics.svg")
-            socketio.emit("plots update", {"type": "optics",
-                                           "time": datetime.now()
-                                          },
+            socketio.emit("optics plot update", {"time": datetime.now()},
                           namespace="/socket")
         if rerender_temp:
             plot_temp(records, locks).render_to_file(PLOTS_DIR + "temp.svg")
-            socketio.emit("plots update", {"type": "temp",
-                                           "time": datetime.now()
-                                          },
+            socketio.emit("temp plot update", {"time": datetime.now()},
                           namespace="/socket")
         time.sleep(PLOTS_INTERVAL)
 
