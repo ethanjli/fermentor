@@ -137,7 +137,7 @@ $(document).ready(function() {
       chart: {title: 'Relative Absorbances'},
       width: 600,
       height: 310,
-      legend: {position: 'bottom'},
+      legend: {position: 'none'},
       series: {
         0: {axis: 'Red'},
         1: {axis: 'Green'}
@@ -156,10 +156,10 @@ $(document).ready(function() {
     data.addColumn('number', 'Ambient Light');
     data.addRows(msg.ambient);
     var options = {
-      chart: {title: 'Environment'},
+      chart: {title: 'Ambient Light'},
       width: 600,
       height: 310,
-      legend: {position: 'bottom'}
+      legend: {position: 'none'}
     };
     var chart = new google.charts.Line(document.getElementById('environ_plot'));
     chart.draw(data, options);
@@ -193,10 +193,10 @@ $(document).ready(function() {
     data.addColumn('number', 'Impeller Duty (Decimal)');
     data.addRows(msg.impeller);
     var options = {
-      chart: {title: 'Actuators'},
+      chart: {title: 'Impeller Duty'},
       width: 600,
       height: 310,
-      legend: {position: 'bottom'}
+      legend: {position: 'none'}
     };
     var chart = new google.charts.Line(document.getElementById('impeller_plot'));
     chart.draw(data, options);
