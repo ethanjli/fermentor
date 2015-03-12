@@ -121,4 +121,8 @@ $(document).ready(function () {
     socket.emit("fermenter stop", {});
     return false;
   });
+  $('form#impellermenu').change(function(event) {
+    socket.emit("impeller set", {data: $('#impellerduty').val()});
+    return false;
+  });
 });

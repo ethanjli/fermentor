@@ -139,6 +139,11 @@ def initialize_default_actuators(a, arduino_lock):
         a.digitalWrite(ACTUATOR_PINS["heater fan"], "HIGH")
         a.analogWrite(ACTUATOR_PINS["impeller motor"],
                 duty_cycle_to_pin_val(IMPELLER_DEFAULT_DUTY))
+def set_impeller(a, arduino_lock, duty):
+    """Sets the impeller motor duty cycle"""
+    with arduino_lock:
+        a.analogWrite(ACTUATOR_PINS["impeller motor"],
+                      duty_cycle_to_pin_val(duty))
 
 ###############################################################################
 # DATA ACQUISITION & PROCESSING

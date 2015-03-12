@@ -53,6 +53,14 @@ def handle_start(message):
     if events["fermenter idle"].is_set():
         events["fermenter idle"].clear()
         fermenter.start_fermenter(a, records, locks, events["fermenter idle"])
+@socketio.on("impeller set", namespace="/socket")
+def handle_impeller(message):
+    with locks["records"]:
+        records["impeller"].append((datetime.now(),
+                                    records["impeller"][-1][1]))
+        fermenter.set_impeller(a, locks["arduino"], message["data"])
+        records["impeller"].append((datetime.now(),
+                                    message["data"]))
 
 ###############################################################################
 # THREADS
