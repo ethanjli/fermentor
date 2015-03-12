@@ -14,19 +14,19 @@ function time_text(data) {
 }
 function start_text(data) {
   if (data) {
-    $('form#startbutton').hide();
-    $('form#stopbutton').show();
     return "Fermenter started at: " + data;
   } else {
-    $('form#startbutton').show();
-    $('form#stopbutton').hide();
     return "Fermenter has not yet started.";
   }
 }
 function stop_text(data, since) {
   if (data) {
+    $('form#startbutton').show();
+    $('form#stopbutton').hide();
     return "Fermenter stopped at: " + data;
   } else {
+    $('form#startbutton').hide();
+    $('form#stopbutton').show();
     return "Fermenter has been running for " + since.toFixed(2) + " hours.";
   }
 }
