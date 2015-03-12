@@ -48,7 +48,8 @@ def handle_impeller(message):
         if message["data"]:
             if records["impeller"][-1] is None:
                 records["impeller"].pop()
-            records["impeller"].append((datetime.now(),
+            records["impeller"].append((fermenter.hours_offset(records["start"],
+                                                               datetime.now()),
                                         records["impeller"][-1][1]))
             fermenter.set_impeller(a, locks["arduino"], float(message["data"]))
             records["impeller"].append((datetime.now(),
