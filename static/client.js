@@ -14,8 +14,12 @@ function time_text(data) {
 }
 function start_text(data) {
   if (data) {
+    $('form#startbutton').hide();
+    $('form#stopbutton').show();
     return "Fermenter started at: " + data;
   } else {
+    $('form#startbutton').show();
+    $('form#stopbutton').hide();
     return "Fermenter has not yet started.";
   }
 }
@@ -108,5 +112,13 @@ $(document).ready(function () {
   });
   document.getElementById('duty_cycles_plot_cache').addEventListener("load", function () {
     $('#duty_cycles_plot').attr("data", $('#duty_cycles_plot_cache').attr("data"));
+  });
+  $('form#startbutton').submit(function(event) {
+    socket.emit("fermenter start", {});
+    return false;
+  });
+  $('form#stopbutton').submit(function(event) {
+    socket.emit("fermenter stop", {});
+    return false;
   });
 });

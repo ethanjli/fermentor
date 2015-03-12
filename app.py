@@ -43,6 +43,16 @@ threads = {}
 @socketio.on("socket event", namespace="/socket")
 def handle_socket_event(message):
     print(message["data"])
+@socketio.on("fermenter stop", namespace="/socket")
+def handle_stop(message):
+    if not events["fermenter idle"].is_set():
+        events["fermenter idle"].set()
+        fermenter.stop_fermenter(a, records, locks, events["fermenter idle"])
+@socketio.on("fermenter start", namespace="/socket")
+def handle_start(message):
+    if events["fermenter idle"].is_set():
+        events["fermenter idle"].clear()
+        fermenter.start_fermenter(a, records, locks, events["fermenter idle"])
 
 ###############################################################################
 # THREADS
@@ -202,5 +212,5 @@ def plots(plot):
 # MAIN
 ###############################################################################
 if __name__ == "__main__":
-    (records, locks, events, threads) = fermenter.run_fermenter()
+    (a, records, locks, events, threads) = fermenter.run_fermenter()
     socketio.run(app, host='0.0.0.0', port=80)

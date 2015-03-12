@@ -388,9 +388,9 @@ def run_fermenter():
     start_fermenter(a, records, locks, events["fermenter idle"])
     threads["temp"].start()
     threads["optics"].start()
-    return (records, locks, events, threads)
+    return (a, records, locks, events, threads)
 
 if __name__ == "__main__":
-    (records, locks, events, threads) = run_fermenter()
+    (a, records, locks, events, threads) = run_fermenter()
     for thread in threads.values():
         signal.pause()
