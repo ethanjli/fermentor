@@ -77,7 +77,7 @@ def update_plots(records, locks):
         rerender_temp = False
         if records["optics"]["red"][-1]:
             if (not optics_last_update or
-                    optics_last_update < records["optics"]["red"][-1]):
+                    optics_last_update < records["optics"]["red"][-1][0]):
                 optics_last_update = records["optics"]["red"][-1][0]
                 rerender_optics = True
         if records["temp"][-1]:
