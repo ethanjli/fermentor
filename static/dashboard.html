@@ -41,8 +41,13 @@
             <input type="submit" value="Stop Fermenter">
           </form>
           </br>
+          <form id="recalibrate" method="POST" action="#">
+            <input type="submit" value="Recalibrate Optics">
+          </form>
+          </br>
           <form id="impellermenu" method="POST" action="#">
-            Impeller: <select id="impellerduty">
+            <p>Impeller duty:</p>
+            <select id="impellerduty">
               <option value="" selected="selected"></option>
               <option value="0">0</option>
               <option value="0.15">15 %</option>
@@ -58,11 +63,6 @@
               <option value="0.3">30 %</option>
             </select>
           </form>
-          </br>
-          <form id="recalibrate" method="POST" action="#">
-            <input type="submit" value="Recalibrate Optics">
-          </form>
-          </br>
         </div>
       </div>
     </div>

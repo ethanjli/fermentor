@@ -28,7 +28,7 @@ plot_config.value_formatter = lambda x: "%.2f" %x
 plot_config.stroke = True
 plot_config.fill = True
 plot_config.width = 600
-plot_config.height = 325
+plot_config.height = 300
 plot_config.legend_at_bottom =True
 plot_config.style = LightColorizedStyle
 
@@ -107,6 +107,13 @@ def trans_to_abs(calib, transmittances):
         if entry and calib:
             absorbances.append((entry[0], fermenter.get_abs(calib, entry[1])))
     return absorbances
+def duty_to_percent(duties):
+    """Converts a list of duty cycles to a list of duty cycle percentages."""
+    percentages = []
+    for entry in duties:
+        if entry:
+            percentages.append((entry[0], entry[1] * 100))
+    return percentages
 def datetime_to_hours(start, series):
     """Converts datetimes into hours."""
     converted = []
@@ -149,14 +156,16 @@ def plot_duty_cycles(records, locks):
     temp_plot.title = "Actuator Duty Cycles"
     temp_plot.y_title = "Duty Cycle (%)"
     with locks["records"]:
-        if records["heater"][-1]:
+        temp_percentages = duty_to_percent(records["heater"])
+        impeller_percentages = duty_to_percent(records["impeller"])
+        if temp_percentages:
             temp_plot.add("Heater", datetime_to_hours(records["start"],
-                                                      records["heater"]))
-        if records["impeller"][-1]:
+                                                      temp_percentages))
+        if impeller_percentages:
             records["impeller"].append((datetime.now(),
                                        records["impeller"][-1][1]))
             temp_plot.add("Impeller", datetime_to_hours(records["start"],
-                                                        records["impeller"]))
+                                                        impeller_percentages))
     return temp_plot
 def plot_environ(records, locks):
     environ_plot = XY(plot_config)
