@@ -100,13 +100,13 @@ $(document).ready(function () {
   socket.on("duty cycles plot update", function(msg) {
     $('#duty_cycles_plot_cache').attr("data", "/plots/duty_cycles?" + msg.time);
   });
-  $('#optics_plot_cache').bind("load", function () {
+  document.getElementById('optics_plot_cache').addEventListener("load", function () {
     $('#optics_plot').attr("data", $('#optics_plot_cache').attr("data"));
   });
-  $('#temp_plot_cache').bind("load", function () {
+  document.getElementById('temp_plot_cache').addEventListener("load", function () {
     $('#temp_plot').attr("data", $('#temp_plot_cache').attr("data"));
   });
-  $('#duty_cycles_plot_cache').bind("load", function () {
+  document.getElementById('duty_cycles_plot_cache').addEventListener("load", function () {
     $('#duty_cycles_plot').attr("data", $('#duty_cycles_plot_cache').attr("data"));
   });
 });
