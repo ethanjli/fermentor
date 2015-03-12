@@ -7,6 +7,9 @@ function duty_cycle_to_percent(duty_cycle) {
 }
 
 // Strings
+function time_text(data) {
+  return "Updated " + data[0]".";
+}
 function start_text(data) {
   if (data) {
     return "Fermenter started at: " + data;
@@ -23,49 +26,42 @@ function stop_text(data, since) {
 }
 function temp_text(data) {
   if (data) {
-    return "Vessel temperature: " + data[1] + "(as of " + data[0] + ")";
-  } else {
-    return "Vessel temperature will be updated soon!";
-  }
-}
-function temp_text(data) {
-  if (data) {
-    return "Vessel temperature: " + data[1].toFixed(2) + " °C (as of " + data[0] + ")";
+    return "Vessel temperature: " + data[1].toFixed(2) + " °C";
   } else {
     return "Vessel temperature will be updated soon!";
   }
 }
 function heater_text(data) {
   if (data) {
-    return "Heater duty cycle: " + duty_cycle_to_percent(data[1]) + " % (as of " + data[0] + ")";
+    return "Heater duty cycle: " + duty_cycle_to_percent(data[1]) + " %";
   } else {
     return "Heater duty cycle will be updated soon!";
   }
 }
 function impeller_text(data) {
   if (data) {
-    return "Impeller duty cycle: " + duty_cycle_to_percent([1]) + " % (as of " + data[0] + ")";
+    return "Impeller duty cycle: " + duty_cycle_to_percent([1]) + " %";
   } else {
     return "Impeller duty cycle will be updated soon!";
   }
 }
 function ambient_text(data) {
   if (data) {
-    return "Ambient light: " + ~~(data[1]) + "  (as of " + data[0] + ")";
+    return "Ambient light: " + ~~(data[1]);
   } else {
     return "Ambient light will be updated soon!";
   }
 }
 function red_text(red_calib, data) {
   if (data) {
-    return "OD: " + absorbance(red_calib, data[1]).toFixed(2) + "  (as of " + data[0] + ")";
+    return "OD: " + absorbance(red_calib, data[1]).toFixed(2);
   } else {
     return "OD will be updated soon!";
   }
 }
 function green_text(green_calib, data) {
   if (data) {
-    return "Green absorbance: " + absorbance(green_calib, data[1]).toFixed(2) + "  (as of " + data[0] + ")";
+    return "Green absorbance: " + absorbance(green_calib, data[1]).toFixed(2);
   } else {
     return "Green absorbance will be updated soon!";
   }
@@ -80,9 +76,11 @@ $(document).ready(function () {
   socket.on("stats update", function (msg) {
     $("#start").text(start_text(msg.start));
     $('#stop').text(stop_text(msg.stop, msg.since));
+    $('#impeller').text(impeller_text(msg.impeller));
+    $('#temp_update_time').text(time_text(msg.temp));
     $('#temp').text(temp_text(msg.temp));
     $('#heater').text(heater_text(msg.heater));
-    $('#impeller').text(impeller_text(msg.impeller));
+    $('#optics_update_time').text(time_text(msg.ambient));
     $('#ambient').text(ambient_text(msg.optics.ambient));
     $('#red').text(red_text(msg.optics.calibration.red, msg.optics.red));
     $('#green').text(green_text(msg.optics.calibration.green, msg.optics.green));

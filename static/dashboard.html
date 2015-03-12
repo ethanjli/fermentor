@@ -9,34 +9,38 @@
   </head>
   <body>
     <h1>Fermenter Dashboard</h1>
-    <div class="info_container">
-      <h2>Operation Information</h2>
-      <p id="start"></p>
-      <p id="stop"></p>
-      <p id="impeller"></p>
+    <div class="section">
+      <div class="info_container">
+        <h2>Operation Information</h2>
+        <p id="start"></p>
+        <p id="stop"></p>
+        <p id="impeller"></p>
+      </div>
+      <div class="info_container">
+        <h2>Temperature Control</h2>
+        <p id="temp_update_time"></p>
+        <p id="temp"></p>
+        <p id="heater"></p>
+      </div>
+      <div class="info_container">
+        <h2>Optics</h2>
+        <p id="optics_update_time"></p>
+        <p id="ambient"></p>
+        <p id="red"></p>
+        <p id="green"></p>
+      </div>
     </div>
-    <div class="info_container">
-      <h2>Temperature Control</h2>
-      <p id="temp"></p>
-      <p id="heater"></p>
-    </div>
-    <div class="info_container">
-      <h2>Optics</h2>
-      <p id="calibred"></p>
-      <p id="calibgreen"></p>
-      <p id="ambient"></p>
-      <p id="red"></p>
-      <p id="green"></p>
-    </div>
-    <h2>Plots</h2>
-    <div class="plot_container">
-      <object id="temp_plot" data="/plots/temp" type="image/svg+xml"></object>
-    </div>
-    <div class="plot_container">
-      <object id="optics_plot" data="/plots/optics" type="image/svg+xml"></object>
-    </div>
-    <div class="plot_container">
-      <object id="duty_cycles_plot" data="/plots/duty_cycles" type="image/svg+xml"></object>
+    <div class="section">
+      <h2>Plots</h2>
+      <div class="plot_container">
+        <object id="temp_plot" data="/plots/temp" type="image/svg+xml"></object>
+      </div>
+      <div class="plot_container">
+        <object id="optics_plot" data="/plots/optics" type="image/svg+xml"></object>
+      </div>
+      <div class="plot_container">
+        <object id="duty_cycles_plot" data="/plots/duty_cycles" type="image/svg+xml"></object>
+      </div>
     </div>
   </body>
 </html>

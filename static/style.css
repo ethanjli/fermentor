@@ -10,14 +10,18 @@ p {
   font-family: Open Sans;
 }
 
+.section {
+  width: 100%;
+}
+
 .info_container {
-  width: 30%;
+  width: 33%;
   float: left;
   margin-right: 10px;
 }
 
 .plot_container {
-  width: 48%;
+  width: 50%;
   float: left;
   margin-right: 10px;
 }
