@@ -146,11 +146,11 @@ def update_plots(records, locks):
 def index():
     """Deliver the dashboard"""
     global threads
-    if "stats" not in threads.keys():
+    if "stats" not in threads.keys() or not threads["stats"].is_alive():
         threads["stats"] = Thread(target=update_stats, name="stats",
                                   args=(records, locks))
         threads["stats"].start()
-    if "plot" not in threads.keys():
+    if "plot" not in threads.keys() or not threads["plot"].is_alive():
         threads["plots"] = Thread(target=update_plots, name="plots",
                                   args=(records, locks))
         threads["plots"].start()
