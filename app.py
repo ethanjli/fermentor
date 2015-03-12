@@ -106,8 +106,8 @@ def update_plots(records, locks):
                     rerender_temp = True
             if records["impeller"][-1]:
                 if (not duty_cycles_last_update or
-                        duty_cycles_last_update < records["heater"][-1][0]):
-                    duty_cycles_last_update = records["heater"][-1][0]
+                        duty_cycles_last_update < records["impeller"][-1][0]):
+                    duty_cycles_last_update = records["impeller"][-1][0]
                     rerender_duty_cycles = True
                     if records["impeller"][-1] is None:
                         records["impeller"].pop()
