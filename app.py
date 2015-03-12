@@ -70,26 +70,46 @@ def trans_to_abs(calib, transmittances):
             absorbances.append((entry[0], fermenter.get_abs(calib, entry[1])))
     return absorbances
 def update_plots(records, locks):
+    temp_last_update = None
+    optics_last_update = None
     while True:
-        rerender = False
-        optics_plot = DateY(stroke=True)
-        optics_plot.title = "Optical Measurements"
-        with (locks["records"]):
-            calib_red = records["optics"]["calibration"]["red"]
-            red = records["optics"]["red"]
-            calib_green = records["optics"]["calibration"]["red"]
-            green = records["optics"]["red"]
-            red_abs = trans_to_abs(calib_red, red)
-            green_abs = trans_to_abs(calib_green, green)
-            if red_abs:
-                optics_plot.add("OD", red_abs)
-                rerender = True
-            if green_abs:
-                optics_plot.add("Green", green_abs)
-                rerender = True
-        if rerender:
+        rerender_optics = False
+        rerender_temp = False
+        if records["optics"]["red"][-1]:
+            if (not optics_last_update or
+                    optics_last_update < records["optics"]["red"][-1]):
+                optics_last_update = records["optics"]["red"][-1][0]
+                rerender_optics = True
+        if records["temp"][-1]:
+            if (not temp_last_update or
+                    temp_last_update < records["temp"][-1][0]):
+                temp_last_update = records["temp"][-1][0]
+                rerender_temp = True
+        if rerender_optics:
+            optics_plot = DateY(stroke=True)
+            optics_plot.title = "Optical Measurements"
+            with locks["records"]:
+                calib_red = records["optics"]["calibration"]["red"]
+                red = records["optics"]["red"]
+                calib_green = records["optics"]["calibration"]["red"]
+                green = records["optics"]["red"]
+                red_abs = trans_to_abs(calib_red, red)
+                green_abs = trans_to_abs(calib_green, green)
+                if red_abs:
+                    optics_plot.add("OD", red_abs)
+                if green_abs:
+                    optics_plot.add("Green", green_abs)
             #os.remove(PLOTS_DIR + "optics.svg")
             optics_plot.render_to_file(PLOTS_DIR + "optics.svg")
+        if rerender_temp:
+            temp_plot = DateY(stroke=True)
+            temp_plot.title = "Temperature control"
+            with locks["records"]:
+                if records["temp"][-1]:
+                    temp_plot.add(records["temp"])
+            #os.remove(PLOTS_DIR + "optics.svg")
+            temp_plot.render_to_file(PLOTS_DIR + "temp.svg")
+        if rerender_optics or rerender_temp:
             socketio.emit("plots update", {"time": datetime.now()},
                           namespace="/socket")
         time.sleep(PLOTS_INTERVAL)
