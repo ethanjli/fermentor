@@ -9,7 +9,7 @@ import logging
 from flask import Flask, send_from_directory
 from flask.ext.socketio import SocketIO, emit
 import pygal
-from pygal import XY
+from pygal import XY, Config
 import os
 import fermenter
 
@@ -21,6 +21,13 @@ logging.basicConfig()
 STATS_INTERVAL = 2 # (sec): time to wait between updating stats
 PLOTS_DIR = "static/plots/"
 PLOTS_INTERVAL = 10 # (sec): time to wait between updating plots
+plot_config = Config()
+plot_config.x_title = "Time (h)"
+plot_config.value_formatter = lambda x: "%.2f" %x
+plot_config.stroke = True
+plot_config.fill = True
+plot_config.width = 400
+plot_config.height = 400
 
 ###############################################################################
 # GLOBALS
@@ -79,13 +86,9 @@ def datetime_to_hours(start, series):
                               entry[1]))
     return converted
 def plot_optics(records, locks):
-    optics_plot = XY(stroke=True)
+    optics_plot = XY(plot_config)
     optics_plot.title = "Optical Measurements"
-    optics_plot.x_title = "Time (h)"
     optics_plot.y_title = "Relative Absorbance"
-    optics_plot.legend_at_bottom = True
-    optics_plot.value_formatter = lambda x: "%.2f" % x
-    optics_plot.fill = True
     with locks["records"]:
         calib_red = records["optics"]["calibration"]["red"]
         red = records["optics"]["red"]
@@ -101,12 +104,9 @@ def plot_optics(records, locks):
                             secondary=True)
     return optics_plot
 def plot_temp(records, locks):
-    temp_plot = XY(stroke=True)
+    temp_plot = XY(plot_config)
     temp_plot.title = "Temperature"
-    temp_plot.x_title = "Time (h)"
     temp_plot.y_title = "Temperature (deg C)"
-    temp_plot.legend_at_bottom = True
-    temp_plot.value_formatter = lambda x: "%.2f" % x
     temp_plot.fill = True
     with locks["records"]:
         if records["temp"][-1]:
@@ -114,13 +114,9 @@ def plot_temp(records, locks):
                                                            records["temp"]))
     return temp_plot
 def plot_duty(records, locks):
-    temp_plot = XY(stroke=True)
+    temp_plot = XY(plot_config)
     temp_plot.title = "Actuator Duty Cycles"
-    temp_plot.x_title = "Time (h)"
     temp_plot.y_title = "Duty Cycle (%)"
-    temp_plot.legend_at_bottom = True
-    temp_plot.value_formatter = lambda x: "%.2f" % x
-    temp_plot.fill = True
     with locks["records"]:
         if records["heater"][-1]:
             temp_plot.add("Duty Cycle", datetime_to_hours(records["start"],
