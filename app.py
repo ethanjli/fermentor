@@ -17,6 +17,7 @@ logging.basicConfig()
 # PARAMETERS
 ###############################################################################
 STATS_INTERVAL = 2 # (sec): time to wait between updating stats
+PLOTS_INTERVAL = 10 # (sec): time to wait between updating plots
 
 ###############################################################################
 # GLOBALS
