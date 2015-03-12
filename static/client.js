@@ -26,6 +26,9 @@ function stop_text(data, since) {
     return "Fermenter has been running for " + since.toFixed(2) + " hours.";
   }
 }
+function now_text(data) {
+  return "Last update: " + data;
+}
 function temp_text(data) {
   if (data) {
     return "Vessel temperature: " + data[1].toFixed(2) + " °C";
@@ -77,7 +80,8 @@ $(document).ready(function () {
   });
   socket.on("stats update", function (msg) {
     $("#start").text(start_text(msg.start));
-    $('#stop').text(stop_text(msg.stop, msg.since));
+    $("#stop").text(stop_text(msg.stop, msg.since));
+    $("#now").text(now_text(msg.now));
     $('#impeller').text(impeller_text(msg.impeller));
     $('#temp_update_time').text(time_text(msg.temp));
     $('#temp').text(temp_text(msg.temp));

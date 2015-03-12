@@ -53,6 +53,7 @@ def update_stats(records, locks):
             stats = {
                 "start": records["start"],
                 "stop": records["stop"],
+                "now": datetime.now(),
                 "since": ((datetime.now() - records["start"]).total_seconds() /
                           3600),
                 "temp": records["temp"][-1],
