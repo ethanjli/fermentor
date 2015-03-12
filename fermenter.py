@@ -173,8 +173,13 @@ def acquire_temp(a, arduino_lock):
     Temperature is returned as a pin value.
     """
     samples = acquire_pin(a, SENSOR_PINS["thermometer"],
-            TEMP_SAMPLES_PER_ACQUISITION, TEMP_SAMPLE_INTERVAL, arduino_lock)
-    return np.mean(discard_temp_outliers(samples))
+                          TEMP_SAMPLES_PER_ACQUISITION, TEMP_SAMPLE_INTERVAL,
+                          arduino_lock)
+    discarded = discard_temp_outliers(samples)
+    if discarded:
+        return np.mean(discarded)
+    else:
+        return None
 def acquire_light(a, color, arduino_lock):
     """Returns the light intensity as sampled over a short time interval.
     Light intensity is returned as an absolute pin value.
@@ -195,7 +200,11 @@ def acquire_light(a, color, arduino_lock):
     samples = acquire_pin(a, SENSOR_PINS["phototransistor"],
             LIGHT_SAMPLES_PER_ACQUISITION, LIGHT_SAMPLE_INTERVAL, arduino_lock)
     turn_off_leds(a, arduino_lock)
-    return np.mean(discard_light_outliers(samples))
+    discarded = discard_light_outliers(samples)
+    if discarded:
+        return np.mean(discarded)
+    else:
+        return None
 def measure_temp(a, arduino_lock):
     """Returns the temperature as measured over a short time.
     Temperature is returned in deg C.
@@ -218,10 +227,16 @@ def measure_transmittances(a, arduino_lock):
             light = acquire_light(a, color, arduino_lock)
             if not np.isnan(light):
                 acquisitions[color].append(int(light))
-    ambient = np.mean(discard_light_outliers(np.array(acquisitions["ambient"])))
-    red = np.mean(discard_light_outliers(np.array(acquisitions["red"])))
-    green = np.mean(discard_light_outliers(np.array(acquisitions["green"])))
-    return (ambient, ambient - red, ambient - green)
+    ambient_discarded = discard_light_outliers(np.array(acquisitions["ambient"]))
+    red_discarded = discard_light_outliers(np.array(acquisitions["red"]))
+    green_discarded = discard_light_outliers(np.array(acquisitions["green"]))
+    if ambient_discarded and red_discarded and green_discarded:
+        ambient = np.mean(ambient_discarded)
+        red = np.mean(red_discarded)
+        green = np.mean(green_discarded)
+        return (ambient, ambient - red, ambient - green)
+    else:
+        return None
 
 ###############################################################################
 # DATA LOGGING
@@ -231,16 +246,20 @@ def record_heat_control(a, arduino_lock, start):
     Also adjusts the heating control effort and records that.
     """
     temp = measure_temp(a, arduino_lock)
-    heater_duty_cycle = temp_to_heating_control_effort(temp)
-    end_time = datetime.now()
-    if np.isnan(temp):
+    if temp and np.isnan(temp):
         return None
     else:
+        heater_duty_cycle = temp_to_heating_control_effort(temp)
+        end_time = datetime.now()
         return (hours_offset(start, end_time), temp, heater_duty_cycle)
 def record_transmittances(a, arduino_lock, start):
     """Returns a transmittances record."""
-    (ambient, red, green) = measure_transmittances(a, arduino_lock)
-    end_time = datetime.now()
+    transmittances = measure_transmittances(a, arduino_lock)
+    if transmittances:
+        (ambient, red, green) = transmittances
+        end_time = datetime.now()
+    else:
+        return None
     if np.isnan(ambient) or np.isnan(red) or np.isnan(green):
         return None
     else:
