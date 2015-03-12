@@ -21,13 +21,12 @@ p {
 }
 
 .info_container {
-  width: 32%;
   padding: 10px;
   display: table-cell;
 }
 
 .plot_container {
-  width: 49%;
+  width: 50%;
   padding: 10px;
   display: table-cell;
 }

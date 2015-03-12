@@ -20,7 +20,7 @@ logging.basicConfig()
 ###############################################################################
 STATS_INTERVAL = 2 # (sec): time to wait between updating stats
 PLOTS_DIR = "static/plots/"
-PLOTS_INTERVAL = 10 # (sec): time to wait between updating plots
+PLOTS_INTERVAL = 20 # (sec): time to wait between updating plots
 plot_config = Config()
 plot_config.x_title = "Time (h)"
 plot_config.value_formatter = lambda x: "%.2f" %x

@@ -52,7 +52,7 @@ MAX_HEATING = 14.9 # (Watts): rate at which TEC supply heat
 SETPOINT = 37.5 # (deg C): target temperature to maintain
 HEATER_SETPOINT_DUTY = HEAT_LOSS / MAX_HEATING # stable duty cycle at setpoint
 GAIN = HEATER_SETPOINT_DUTY - 1 # proportional gain
-TEMP_MEASUREMENT_INTERVAL = 5 # (sec): time to wait between measurements
+TEMP_MEASUREMENT_INTERVAL = 10 # (sec): time to wait between measurements
 
 # Impeller
 IMPELLER_DEFAULT_DUTY = 0.2 # default duty cycle of the impeller
