@@ -130,9 +130,7 @@ $(document).ready(function () {
   socket.on("temp plot update", function(msg) {
     $('#temp_plot_cache').attr("data", "/plots/temp?" + msg.time);
     var header = [[{label: 'Time (h)', id: 'time'}, {label: 'Temperature (°C)', id: 'temp'}]];
-    var data = google.visualization.arrayToDataTable([
-        header.concat(msg.temp);
-    ]);
+    var data = google.visualization.arrayToDataTable(header.concat(msg.temp));
     var options = {'title': 'Temperature', 'width': 600, 'height': 320};
     var chart = new google.visualization.LineChart(document.getElementById('temp_plot'));
   });
