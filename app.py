@@ -122,8 +122,8 @@ def plot_optics(records, locks):
     with locks["records"]:
         calib_red = records["optics"]["calibration"]["red"]
         red = records["optics"]["red"]
-        calib_green = records["optics"]["calibration"]["red"]
-        green = records["optics"]["red"]
+        calib_green = records["optics"]["calibration"]["green"]
+        green = records["optics"]["green"]
         red_abs = trans_to_abs(calib_red, red)
         green_abs = trans_to_abs(calib_green, green)
         if red_abs:
