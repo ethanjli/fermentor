@@ -46,13 +46,14 @@ def handle_start(message):
 def handle_impeller(message):
     with locks["records"]:
         if message["data"]:
+            start = records["start"]
             if records["impeller"][-1] is None:
                 records["impeller"].pop()
-            records["impeller"].append((fermenter.hours_offset(records["start"],
+            records["impeller"].append((fermenter.hours_offset(start,
                                                                datetime.now()),
                                         records["impeller"][-1][1]))
             fermenter.set_impeller(a, locks["arduino"], float(message["data"]))
-            records["impeller"].append((fermenter.hours_offset(records["start"],
+            records["impeller"].append((fermenter.hours_offset(start,
                                                                datetime.now()),
                                         float(message["data"])))
 @socketio.on("recalibrate optics", namespace="/socket")
@@ -96,6 +97,7 @@ def update_plots(records, locks):
         rerender_temp = False
         rerender_duty_cycles = False
         with locks["records"]:
+            start = records["start"]
             if records["optics"]["red"][-1]:
                 if (not optics_last_update or
                         optics_last_update < records["optics"]["red"][-1][0]):
@@ -113,9 +115,9 @@ def update_plots(records, locks):
                     rerender_duty_cycles = True
                     if records["impeller"][-1] is None:
                         records["impeller"].pop()
-                    records["impeller"].append((datetime.now(),
+                    records["impeller"].append((fermenter.hours_offset(start,
+                                                                       datetime.now()),
                                                 records["impeller"][-1][1]))
-            start = records["start"]
             if rerender_optics:
                 socketio.emit("optics plot update", {
                     "redgreen": [x + (z,) for x, (y, z) in
