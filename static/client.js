@@ -133,7 +133,20 @@ $(document).ready(function() {
     data.addRows(msg.redgreen.map(function(curr) {
       return [curr[0], absorbance(calib_red, curr[1]), absorbance(calib_green, curr[2])];
     }));
-    var options = {'title': 'Relative Absorbances', 'width': 600, 'height': 310};
+    var options = {
+      chart: {title: 'Relative Absorbances'},
+      width: 600,
+      height: 310,
+      legend: {position: 'bottom'},
+      series: {
+        0: {axis: 'Red'},
+        1: {axis: 'Green'}
+      },
+      axes: {
+        Red: {label: 'OD'},
+        Green: {label: 'Green Absorbance'}
+      }
+    };
     var chart = new google.charts.Line(document.getElementById('optics_plot'));
     chart.draw(data, options);
   });
@@ -142,7 +155,12 @@ $(document).ready(function() {
     data.addColumn('number', 'Time (h)');
     data.addColumn('number', 'Ambient Light');
     data.addRows(msg.ambient);
-    var options = {'title': 'Environment', 'width': 600, 'height': 310};
+    var options = {
+      chart: {title: 'Environment'},
+      width: 600,
+      height: 310,
+      legend: {position: 'bottom'}
+    };
     var chart = new google.charts.Line(document.getElementById('environ_plot'));
     chart.draw(data, options);
   });
@@ -152,7 +170,20 @@ $(document).ready(function() {
     data.addColumn('number', 'Temperature (°C)');
     data.addColumn('number', 'Heater Duty (Decimal)');
     data.addRows(msg.tempheater);
-    var options = {'title': 'Temperature Control', 'width': 600, 'height': 310};
+    var options = {
+      chart: {title: 'Temperature Control'},
+      width: 600,
+      height: 310,
+      legend: {position: 'none'},
+      series: {
+        0: {axis: 'Temp'},
+        1: {axis: 'Heater'}
+      },
+      axes: {
+        Temp: {label: 'Temperature (°C)'},
+        Heater: {label: 'Heater Duty Cycle'}
+      }
+    };
     var chart = new google.charts.Line(document.getElementById('temp_plot'));
     chart.draw(data, options);
   });
@@ -161,7 +192,12 @@ $(document).ready(function() {
     data.addColumn('number', 'Time (h)');
     data.addColumn('number', 'Impeller Duty (Decimal)');
     data.addRows(msg.impeller);
-    var options = {'title': 'Environment', 'width': 600, 'height': 310};
+    var options = {
+      chart: {title: 'Actuators'},
+      width: 600,
+      height: 310,
+      legend: {position: 'bottom'}
+    };
     var chart = new google.charts.Line(document.getElementById('impeller_plot'));
     chart.draw(data, options);
   });
