@@ -10,18 +10,24 @@ p {
   font-family: Open Sans;
 }
 
+.dashboard {
+  width: 100%
+  display: table;
+}
+
 .section {
   width: 100%;
+  display: table-row;
 }
 
 .info_container {
   width: 32%;
-  float: left;
   padding: 10px;
+  display: table-cell;
 }
 
 .plot_container {
   width: 49%;
-  float: left;
   padding: 10px;
+  display: table-cell;
 }
