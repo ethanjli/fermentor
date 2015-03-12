@@ -363,7 +363,7 @@ def monitor_optics(a, records, locks, calibrate_event, idle_event):
                     records["optics"]["green"].append((record[0], record[3]))
                 idle_event.wait(LIGHT_MEASUREMENT_INTERVAL)
         else:
-            time.sleep(IDLE_CHECK_INTERVAN)
+            time.sleep(IDLE_CHECK_INTERVAL)
 
 ###############################################################################
 # MAIN
