@@ -140,7 +140,7 @@ $(document).ready(function() {
       legend: {position: 'none'},
       series: {
         0: {axis: 'Red', color: '#db4437'},
-        1: {axis: 'Green', color: '6f9654'}
+        1: {axis: 'Green', color: '#6f9654'}
       },
       axes: {
         Red: {label: 'OD'},
