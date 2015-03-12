@@ -82,12 +82,12 @@ function green_text(green_calib, data) {
 
 google.load('visualization', '1.1', {packages: ['line']});
 
-$(document).ready(function () {
+$(document).ready(function() {
 
   // Set up socket
   namespace = "/socket";
   var socket = io.connect("http://" + document.domain + ":" + location.port + namespace);
-  socket.on("connect", function () {
+  socket.on("connect", function() {
     socket.emit("socket event", {data: "Successful connection!"});
   });
 
@@ -110,7 +110,7 @@ $(document).ready(function () {
   });
 
   // Receive events
-  socket.on("stats update", function (msg) {
+  socket.on("stats update", function(msg) {
     $("#start").text(start_text(msg.start));
     $("#stop").text(stop_text(msg.stop, msg.since));
     $("#now").text(now_text(msg.now));
@@ -124,12 +124,16 @@ $(document).ready(function () {
     $('#green').text(green_text(msg.optics.calibration.green, msg.optics.green));
   });
   socket.on("optics plot update", function(msg) {
+    var calib_red = msg.calibration.red;
+    var calib_green = msg.calibration.green;
     var data = new google.visualization.DataTable();
     data.addColumn('number', 'Time (h)');
     data.addColumn('number', 'Red (OD)');
     data.addColumn('number', 'Green');
-    data.addRows(msg.redgreen);
-    var options = {'title': 'Relative Absorbances', 'width': 600, 'height': 320};
+    data.addRows(msg.redgreen.map(function(curr) {
+      return [curr[0], absorbance(calib_red, curr[1]), absorbance(calib_green, curr[2])];
+    }));
+    var options = {'title': 'Relative Absorbances', 'width': 600, 'height': 310};
     var chart = new google.charts.Line(document.getElementById('optics_plot'));
     chart.draw(data, options);
   });
@@ -138,7 +142,7 @@ $(document).ready(function () {
     data.addColumn('number', 'Time (h)');
     data.addColumn('number', 'Ambient Light');
     data.addRows(msg.ambient);
-    var options = {'title': 'Environment', 'width': 600, 'height': 320};
+    var options = {'title': 'Environment', 'width': 600, 'height': 310};
     var chart = new google.charts.Line(document.getElementById('environ_plot'));
     chart.draw(data, options);
   });
@@ -148,7 +152,7 @@ $(document).ready(function () {
     data.addColumn('number', 'Temperature (°C)');
     data.addColumn('number', 'Heater Duty (Decimal)');
     data.addRows(msg.tempheater);
-    var options = {'title': 'Temperature Control', 'width': 600, 'height': 320};
+    var options = {'title': 'Temperature Control', 'width': 600, 'height': 310};
     var chart = new google.charts.Line(document.getElementById('temp_plot'));
     chart.draw(data, options);
   });
@@ -157,7 +161,7 @@ $(document).ready(function () {
     data.addColumn('number', 'Time (h)');
     data.addColumn('number', 'Impeller Duty (Decimal)');
     data.addRows(msg.impeller);
-    var options = {'title': 'Environment', 'width': 600, 'height': 320};
+    var options = {'title': 'Environment', 'width': 600, 'height': 310};
     var chart = new google.charts.Line(document.getElementById('impeller_plot'));
     chart.draw(data, options);
   });

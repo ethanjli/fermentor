@@ -120,6 +120,7 @@ def update_plots(records, locks):
                                                 records["impeller"][-1][1]))
             if rerender_optics:
                 socketio.emit("optics plot update", {
+                    "calibration": records["optics"]["calibration"],
                     "redgreen": [x + (z,) for x, (y, z) in
                                  zip(records["optics"]["red"],
                                      records["optics"]["green"])],
