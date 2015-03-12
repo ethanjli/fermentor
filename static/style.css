@@ -17,11 +17,11 @@ p {
 .info_container {
   width: 32%;
   float: left;
-  padding: 5px 5px;
+  padding: 10px;
 }
 
 .plot_container {
-  width: 50%;
+  width: 49%;
   float: left;
-  padding: 5px 5px;
+  padding: 10px;
 }
