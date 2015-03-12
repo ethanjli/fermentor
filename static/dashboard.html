@@ -57,6 +57,7 @@
               <option value="0.3">30 %</option>
             </select>
           </form>
+          </br>
           <form id="recalibrate" method="POST" action="#">
             <input type="submit" value="Recalibrate Optics">
           </form>
@@ -78,7 +79,7 @@
           <object id="duty_cycles_plot" type="image/svg+xml"></object>
         </div>
         <div class="plot_container">
-          ambient plot goes here
+          <object id="environ_plot" type="image/svg+xml"></object>
         </div>
       </div>
     </div>
@@ -86,6 +87,7 @@
       <object id="temp_plot_cache" data="/plots/temp" type="image/svg+xml"></object>
       <object id="optics_plot_cache" data="/plots/optics" type="image/svg+xml"></object>
       <object id="duty_cycles_plot_cache" data="/plots/duty_cycles" type="image/svg+xml"></object>
+      <object id="environ_plot_cache" data="/plots/environ" type="image/svg+xml"></object>
     </div>
   </body>
 </html>
