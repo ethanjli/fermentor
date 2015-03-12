@@ -10,6 +10,12 @@ p {
   font-family: Open Sans;
 }
 
+.info_container {
+  width: 30%;
+  float: left;
+  margin-right: 10px;
+}
+
 .plot_container {
   width: 48%;
   float: left;
