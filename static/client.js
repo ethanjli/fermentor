@@ -13,7 +13,7 @@ function convert_timezones(datestr) {
 // Strings
 function time_text(data) {
   if (data) {
-    return "Updated " + convert_timezones(data[0]) + ".";
+    return "Updated: " + convert_timezones(data[0]) + ".";
   }
 }
 function start_text(data) {
@@ -35,7 +35,7 @@ function stop_text(data, since) {
   }
 }
 function now_text(data) {
-  return "Last update: " + data;
+  return "Now: " + convert_timezones(data);
 }
 function temp_text(data) {
   if (data) {
