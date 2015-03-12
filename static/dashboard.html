@@ -4,7 +4,8 @@
     <title>Fermenter Dashboard</title>
     <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
-    <script type="text/javascript" src="./client.js"></script>
+    <script type="text/javascript" src="/client.js"></script>
+    <link rel="stylesheet" type="text/css" href="/style.css">
   </head>
   <body>
     <h1>Fermenter Dashboard</h1>
@@ -23,7 +24,7 @@
     <p id="red"></p>
     <p id="green"></p>
     <h2>Plots</h2>
-    <object id="temp_plot" data="/plots/temp" type="image/svg+xml"></object>
-    <object id="optics_plot" data="/plots/optics" type="image/svg+xml"></object>
+    <div class="plot_container"><object id="temp_plot" data="/plots/temp" type="image/svg+xml"></object></div>
+    <div class="plot_container"><object id="optics_plot" data="/plots/optics" type="image/svg+xml"></object></div>
   </body>
 </html>

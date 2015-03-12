@@ -175,6 +175,11 @@ def client():
     """Deliver the client-side scripting"""
     return send_from_directory("static", "client.js")
 
+@app.route("/style.css")
+def style():
+    """Deliver the client-side styling"""
+    return send_from_directory("static", "style.css")
+
 @app.route("/plots/<plot>")
 def plots(plot):
     """Deliver the specified plot"""
