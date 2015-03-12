@@ -145,7 +145,7 @@ $(document).ready(function() {
       axes: {
         Red: {label: 'OD'},
         Green: {label: 'Green Absorbance'}
-      }
+      },
       color: ['#db4437', '#6f9654']
     };
     var chart = new google.charts.Line(document.getElementById('optics_plot'));
