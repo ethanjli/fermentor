@@ -18,7 +18,7 @@ function stop_text(data, since) {
   if (data) {
     return "Fermenter stopped at: " + data;
   } else {
-    return "Fermenter has been running for " + since.toFixed(2) + "hours";
+    return "Fermenter has been running for " + since.toFixed(2) + " hours.";
   }
 }
 function temp_text(data) {
@@ -88,7 +88,11 @@ $(document).ready(function () {
     $('#green').text(green_text(msg.optics.calibration.green, msg.optics.green));
   });
   socket.on("stats update", function(msg) {
-    $('#optics_plot').attr("data", "/plots/optics?" + msg.time);
-    $('#temp_plot').attr("data", "/plots/temp?" + msg.time);
+    if (msg.type === "optics") {
+      $('#optics_plot').attr("data", "/plots/optics?" + msg.time);
+    }
+    if (msg.type === "temp") {
+      $('#temp_plot').attr("data", "/plots/temp?" + msg.time);
+    }
   });
 });

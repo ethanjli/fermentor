@@ -78,6 +78,30 @@ def datetime_to_hours(start, series):
             converted.append(((entry[0] - start).total_seconds() / 3600,
                               entry[1]))
     return converted
+def plot_optics(records, locks):
+    optics_plot = XY(stroke=True)
+    optics_plot.title = "Optical Measurements"
+    with locks["records"]:
+        calib_red = records["optics"]["calibration"]["red"]
+        red = records["optics"]["red"]
+        calib_green = records["optics"]["calibration"]["red"]
+        green = records["optics"]["red"]
+        red_abs = trans_to_abs(calib_red, red)
+        green_abs = trans_to_abs(calib_green, green)
+        if red_abs:
+            optics_plot.add("OD", datetime_to_hours(records["start"], red_abs))
+        if green_abs:
+            optics_plot.add("Green", datetime_to_hours(records["start"],
+                                                       green_abs))
+    return optics_plot
+def plot_temp(records, locks):
+    temp_plot = XY(stroke=True)
+    temp_plot.title = "Temperature control"
+    with locks["records"]:
+        if records["temp"][-1]:
+            temp_plot.add("Temperature", datetime_to_hours(records["start"],
+                                                           records["temp"]))
+    return temp_plot
 def update_plots(records, locks):
     temp_last_update = None
     optics_last_update = None
@@ -95,36 +119,17 @@ def update_plots(records, locks):
                 temp_last_update = records["temp"][-1][0]
                 rerender_temp = True
         if rerender_optics:
-            optics_plot = XY(stroke=True)
-            optics_plot.title = "Optical Measurements"
-            with locks["records"]:
-                calib_red = records["optics"]["calibration"]["red"]
-                red = records["optics"]["red"]
-                calib_green = records["optics"]["calibration"]["red"]
-                green = records["optics"]["red"]
-                red_abs = trans_to_abs(calib_red, red)
-                green_abs = trans_to_abs(calib_green, green)
-                if red_abs:
-                    optics_plot.add("OD", datetime_to_hours(records["start"],
-                                                            red_abs))
-                if green_abs:
-                    optics_plot.add("Green",
-                                    datetime_to_hours(records["start"],
-                                                      green_abs))
-            #os.remove(PLOTS_DIR + "optics.svg")
-            optics_plot.render_to_file(PLOTS_DIR + "optics.svg")
+            plot_optics(records, locks).render_to_file(PLOTS_DIR +
+                                                       "optics.svg")
+            socketio.emit("plots update", {"type": "optics",
+                                           "time": datetime.now()
+                                          },
+                          namespace="/socket")
         if rerender_temp:
-            temp_plot = XY(stroke=True)
-            temp_plot.title = "Temperature control"
-            with locks["records"]:
-                if records["temp"][-1]:
-                    temp_plot.add("Temperature",
-                                  datetime_to_hours(records["start"],
-                                                    records["temp"]))
-            #os.remove(PLOTS_DIR + "optics.svg")
-            temp_plot.render_to_file(PLOTS_DIR + "temp.svg")
-        if rerender_optics or rerender_temp:
-            socketio.emit("plots update", {"time": datetime.now()},
+            plot_temp(records, locks).render_to_file(PLOTS_DIR + "temp.svg")
+            socketio.emit("plots update", {"type": "temp",
+                                           "time": datetime.now()
+                                          },
                           namespace="/socket")
         time.sleep(PLOTS_INTERVAL)
 
