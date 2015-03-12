@@ -94,7 +94,8 @@ def update_plots(records, locks):
                 #rerender = True
             optics_plot.add("Placeholder", [(1, 1), (2, 4), (3, 9), (4, 16)])
         if rerender:
-            plots["optics"].render_to_file(PLOTS_DIR + "optics.svg")
+            #plots["optics"].render_to_file(PLOTS_DIR + "optics.svg")
+            optics_plot.render_to_file(PLOTS_DIR + "optics.svg")
             socketio.emit("plots update", {"time": datetime.now()},
                           namespace="/socket")
         time.sleep(PLOTS_INTERVAL)
