@@ -82,7 +82,7 @@ $(document).ready(function () {
     $('#temp_update_time').text(time_text(msg.temp));
     $('#temp').text(temp_text(msg.temp));
     $('#heater').text(heater_text(msg.heater));
-    $('#optics_update_time').text(time_text(msg.ambient));
+    $('#optics_update_time').text(time_text(msg.optics.ambient));
     $('#ambient').text(ambient_text(msg.optics.ambient));
     $('#red').text(red_text(msg.optics.calibration.red, msg.optics.red));
     $('#green').text(green_text(msg.optics.calibration.green, msg.optics.green));

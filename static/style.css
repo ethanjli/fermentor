@@ -10,12 +10,12 @@ p {
   font-family: Open Sans;
 }
 
-.dashboard {
+.container {
   width: 100%
   display: table;
 }
 
-.section {
+.row {
   width: 100%;
   display: table-row;
 }
