@@ -106,7 +106,7 @@ def update_plots(records, locks):
             temp_plot.title = "Temperature control"
             with locks["records"]:
                 if records["temp"][-1]:
-                    temp_plot.add(records["temp"])
+                    temp_plot.add("Temperature", records["temp"])
             #os.remove(PLOTS_DIR + "optics.svg")
             temp_plot.render_to_file(PLOTS_DIR + "temp.svg")
         if rerender_optics or rerender_temp:
