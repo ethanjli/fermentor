@@ -49,7 +49,7 @@ function heater_text(data) {
 }
 function impeller_text(data) {
   if (data) {
-    return "Impeller duty cycle: " + duty_cycle_to_percent([1]) + " %";
+    return "Impeller duty cycle: " + duty_cycle_to_percent(data[1]) + " %";
   } else {
     return "Impeller duty cycle will be updated soon!";
   }

@@ -52,6 +52,9 @@ def handle_stop(message):
 def handle_start(message):
     if events["fermenter idle"].is_set():
         events["fermenter idle"].clear()
+        os.remove("static/plots/temp.svg")
+        os.remove("static/plots/optics.svg")
+        os.remove("static/plots/duty_cycles.svg")
         fermenter.start_fermenter(a, records, locks, events["fermenter idle"])
 @socketio.on("impeller set", namespace="/socket")
 def handle_impeller(message):
