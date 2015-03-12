@@ -328,6 +328,7 @@ def monitor_temp(a, records, locks, idle_event):
         if not idle_event.is_set():
             record = record_heat_control(a, locks["arduino"])
             if record:
+                print(record)
                 with locks["arduino"] and locks["heater"]:
                     a.analogWrite(ACTUATOR_PINS["heater"],
                                   duty_cycle_to_pin_val(record[2]))
