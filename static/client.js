@@ -131,7 +131,7 @@ $(document).ready(function() {
     data.addColumn('number', 'Red (OD)');
     data.addColumn('number', 'Green');
     data.addRows(msg.redgreen.map(function(curr) {
-      return [curr[0], absorbance(calib_red, curr[1]), absorbance(calib_green, curr[2])];
+      return [curr[0], absorbance(calib_green, curr[2]), absorbance(calib_red, curr[1])];
     }));
     var options = {
       chart: {title: 'Relative Absorbances'},
@@ -139,16 +139,16 @@ $(document).ready(function() {
       height: 310,
       legend: {position: 'none'},
       series: {
-        0: {axis: 'Red', color: '#db4437'},
-        1: {axis: 'Green', color: '#6f9654'}
+        0: {axis: 'Green'},
+        1: {axis: 'Red'}
       },
       axes: {
-        Red: {label: 'OD'},
-        Green: {label: 'Green Absorbance'}
+        Green: {label: 'Green Absorbance', color: '#6f9654'},
+        Red: {label: 'OD', color: '#db4437'},
       },
     };
     var chart = new google.charts.Line(document.getElementById('optics_plot'));
-    chart.draw(data, google.charts.Line.convertOptions(options));
+    chart.draw(data, options);
   });
   socket.on("environ plot update", function(msg) {
     var data = new google.visualization.DataTable();
