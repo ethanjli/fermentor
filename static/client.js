@@ -139,8 +139,8 @@ $(document).ready(function() {
       height: 310,
       legend: {position: 'none'},
       series: {
-        0: {axis: 'Red'},
-        1: {axis: 'Green'}
+        0: {axis: 'Red', color: '#db4437'},
+        1: {axis: 'Green', color: '6f9654'}
       },
       axes: {
         Red: {label: 'OD'},
