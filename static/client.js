@@ -18,7 +18,7 @@ function time_text(data) {
 }
 function start_text(data) {
   if (data) {
-    return "Fermenter started at: " + data;
+    return "Fermenter started at: " + convert_timezones(data);
   } else {
     return "Fermenter has not yet started.";
   }
@@ -27,7 +27,7 @@ function stop_text(data, since) {
   if (data) {
     $('form#startbutton').show();
     $('form#stopbutton').hide();
-    return "Fermenter stopped at: " + data;
+    return "Fermenter stopped at: " + convert_timezones(data);
   } else {
     $('form#startbutton').hide();
     $('form#stopbutton').show();
