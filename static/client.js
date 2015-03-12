@@ -139,13 +139,14 @@ $(document).ready(function() {
       height: 310,
       legend: {position: 'none'},
       series: {
-        0: {axis: 'Red', color: '#db4437'},
-        1: {axis: 'Green', color: '#6f9654'}
+        0: {axis: 'Red'},
+        1: {axis: 'Green'}
       },
       axes: {
         Red: {label: 'OD'},
         Green: {label: 'Green Absorbance'}
       }
+      color: ['#db4437', '#6f9654']
     };
     var chart = new google.charts.Line(document.getElementById('optics_plot'));
     chart.draw(data, options);
