@@ -248,10 +248,10 @@ def client():
     """Deliver the client-side scripting"""
     return send_from_directory("static", "client.js")
 
-@app.route("/lib/<js>")
+@app.route("/js/<js>")
 def lib(js):
     """Deliver js lib dependencies"""
-    return send_from_directory("static/lib/", js)
+    return send_from_directory("static/js/", js)
 
 @app.route("/style.css")
 def style():
