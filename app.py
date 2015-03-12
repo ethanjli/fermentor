@@ -97,12 +97,12 @@ def update_plots(records, locks):
                         optics_last_update < records["optics"]["red"][-1][0]):
                     optics_last_update = records["optics"]["red"][-1][0]
                     rerender_optics = True
-            if records["temp"][-1]:
+            if records["temp"][-1] and records["heater"][-1]:
                 if (not temp_last_update or
                         temp_last_update < records["temp"][-1][0]):
                     temp_last_update = records["temp"][-1][0]
                     rerender_temp = True
-            if records["heater"][-1]:
+            if records["impeller"][-1]:
                 if (not duty_cycles_last_update or
                         duty_cycles_last_update < records["heater"][-1][0]):
                     duty_cycles_last_update = records["heater"][-1][0]
@@ -126,7 +126,7 @@ def update_plots(records, locks):
                                      records["heater"])],
                 }, namespace="/socket")
             if rerender_duty_cycles:
-                socketio.emit("duty cycles plot update", {
+                socketio.emit("impeller plot update", {
                     "impeller": records["impeller"],
                 }, namespace="/socket")
         time.sleep(PLOTS_INTERVAL)
