@@ -14,11 +14,11 @@ function start_text(data) {
     return "Fermenter has not yet started.";
   }
 }
-function stop_text(data) {
+function stop_text(data, since) {
   if (data) {
     return "Fermenter stopped at: " + data;
   } else {
-    return "Fermenter is still running.";
+    return "Fermenter has been running for " + since;
   }
 }
 function temp_text(data) {
@@ -79,12 +79,15 @@ $(document).ready(function () {
   });
   socket.on("stats update", function (msg) {
     $("#start").text(start_text(msg.start));
-    $('#stop').text(stop_text(msg.stop));
+    $('#stop').text(stop_text(msg.stop, msg.since));
     $('#temp').text(temp_text(msg.temp));
     $('#heater').text(heater_text(msg.heater));
     $('#impeller').text(impeller_text(msg.impeller));
     $('#ambient').text(ambient_text(msg.optics.ambient));
     $('#red').text(red_text(msg.optics.calibration.red, msg.optics.red));
     $('#green').text(green_text(msg.optics.calibration.green, msg.optics.green));
+  });
+  socket.on("stats update", function(msg) {
+    $('#optics_plot').attr("data", "/plots/optics?" + msg);
   });
 });

@@ -105,7 +105,7 @@ def discard_light_outliers(samples):
     """
     distances = np.abs(samples - np.median(samples))
     return samples[distances <= LIGHT_OUTLIER_THRESHOLD]
-def transmittance_to_absorbance(transmittance, full_transmittance):
+def get_abs(transmittance, full_transmittance):
     """Normalizes a transmittance against a calibration value."""
     return float(full_transmittance - transmittance) / full_transmittance
 

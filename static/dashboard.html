@@ -1,23 +1,28 @@
 <!DOCTYPE HTML>
 <html>
-<head>
+  <head>
     <title>Fermenter Dashboard</title>
     <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
     <script type="text/javascript" src="./client.js"></script>
-</head>
-<body>
-    <h1>Fermenter dashboard</h1>
+  </head>
+  <body>
+    <h1>Fermenter Dashboard</h1>
     <p><a href="./">back</a></p>
+    <h2>Operation Information</h2>
     <p id="start"></p>
     <p id="stop"></p>
+    <p id="impeller"></p>
+    <h2>Temperature Control</h2>
     <p id="temp"></p>
     <p id="heater"></p>
-    <p id="impeller"></p>
+    <h2>Optics</h2>
     <p id="calibred"></p>
     <p id="calibgreen"></p>
     <p id="ambient"></p>
     <p id="red"></p>
     <p id="green"></p>
-</body>
+    <h2>Plots</h2>
+    <object id="optics_plot" data="/plots/optics" type="image/svg+xml"></object>
+  </body>
 </html>
