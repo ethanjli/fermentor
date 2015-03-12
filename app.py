@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 from gevent import monkey
 monkey.patch_all()
 
@@ -65,7 +65,8 @@ def trans_to_abs(calib, transmittances):
     """Converts a list of transmittances to a list of absorbances."""
     absorbances = []
     for entry in transmittances:
-        absorbances.append((entry[0], fermenter.get_abs(calib, entry[1])))
+        if entry and calib:
+            absorbances.append((entry[0], fermenter.get_abs(calib, entry[1])))
     return absorbances
 def update_plots(records, locks):
     optics_plot = XY(stroke=True)
@@ -77,11 +78,13 @@ def update_plots(records, locks):
             red = records["optics"]["red"]
             calib_green = records["optics"]["calibration"]["red"]
             green = records["optics"]["red"]
-            if red and calib_red:
-                optics_plot.add("OD", trans_to_abs(calib_red, red))
+            red_abs = trans_to_abs(calib_red, red)
+            green_abs = trans_to_abs(calib_green, green)
+            if red_abs:
+                optics_plot.add("OD", red_abs)
                 rerender = True
-            if green and calib_red:
-                optics_plot.add("Green", trans_to_abs(calib_green, green))
+            if green_abs:
+                optics_plot.add("Green", green_abs)
                 rerender = True
         if rerender:
             optics_plot.render_to_file(PLOTS_DIR + "optics.svg")
