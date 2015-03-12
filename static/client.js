@@ -13,7 +13,7 @@ function convert_timezones(datestr) {
 // Strings
 function time_text(data) {
   if (data) {
-    return "Updated: " + convert_timezones(data[0]) + ".";
+    return "Updated: " + data[0] + " hours after start.";
   }
 }
 function start_text(data) {
@@ -81,11 +81,34 @@ function green_text(green_calib, data) {
 }
 
 $(document).ready(function () {
+  google.load('visualization', '1.0', {'packages': ['corechart']});
+
+  // Set up socket
   namespace = "/socket";
   var socket = io.connect("http://" + document.domain + ":" + location.port + namespace);
   socket.on("connect", function () {
     socket.emit("socket event", {data: "Successful connection!"});
   });
+
+  // Emit events
+  $('form#startbutton').submit(function(event) {
+    socket.emit("fermenter start", {});
+    return false;
+  });
+  $('form#stopbutton').submit(function(event) {
+    socket.emit("fermenter stop", {});
+    return false;
+  });
+  $('form#impellermenu').change(function(event) {
+    socket.emit("impeller set", {data: $('#impellerduty').val()});
+    return false;
+  });
+  $('form#recalibrate').submit(function(event) {
+    socket.emit("recalibrate optics", {});
+    return false;
+  });
+
+  // Receive events
   socket.on("stats update", function (msg) {
     $("#start").text(start_text(msg.start));
     $("#stop").text(stop_text(msg.stop, msg.since));
@@ -109,32 +132,5 @@ $(document).ready(function () {
   socket.on("duty cycles plot update", function(msg) {
     $('#duty_cycles_plot_cache').attr("data", "/plots/duty_cycles?" + msg.time);
   });
-  document.getElementById('optics_plot_cache').addEventListener("load", function () {
-    $('#optics_plot').attr("data", $('#optics_plot_cache').attr("data"));
-  });
-  document.getElementById('environ_plot_cache').addEventListener("load", function () {
-    $('#environ_plot').attr("data", $('#environ_plot_cache').attr("data"));
-  });
-  document.getElementById('temp_plot_cache').addEventListener("load", function () {
-    $('#temp_plot').attr("data", $('#temp_plot_cache').attr("data"));
-  });
-  document.getElementById('duty_cycles_plot_cache').addEventListener("load", function () {
-    $('#duty_cycles_plot').attr("data", $('#duty_cycles_plot_cache').attr("data"));
-  });
-  $('form#startbutton').submit(function(event) {
-    socket.emit("fermenter start", {});
-    return false;
-  });
-  $('form#stopbutton').submit(function(event) {
-    socket.emit("fermenter stop", {});
-    return false;
-  });
-  $('form#impellermenu').change(function(event) {
-    socket.emit("impeller set", {data: $('#impellerduty').val()});
-    return false;
-  });
-  $('form#recalibrate').submit(function(event) {
-    socket.emit("recalibrate optics", {});
-    return false;
-  });
 });
+

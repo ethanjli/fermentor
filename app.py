@@ -8,9 +8,6 @@ from datetime import datetime
 import logging
 from flask import Flask, send_from_directory
 from flask.ext.socketio import SocketIO, emit
-import pygal
-from pygal import XY, Config
-from pygal.style import LightColorizedStyle
 import os
 import fermenter
 
@@ -20,17 +17,6 @@ logging.basicConfig()
 # PARAMETERS
 ###############################################################################
 STATS_INTERVAL = 2 # (sec): time to wait between updating stats
-PLOTS_DIR = "static/plots/"
-PLOTS_INTERVAL = 20 # (sec): time to wait between updating plots
-plot_config = Config()
-plot_config.x_title = "Time (h)"
-plot_config.value_formatter = lambda x: "%.2f" %x
-plot_config.stroke = True
-plot_config.fill = True
-plot_config.width = 600
-plot_config.height = 320
-plot_config.legend_at_bottom =True
-plot_config.style = LightColorizedStyle
 
 ###############################################################################
 # GLOBALS
@@ -50,15 +36,6 @@ def handle_stop(message):
     if not events["fermenter idle"].is_set():
         events["fermenter idle"].set()
         fermenter.stop_fermenter(a, records, locks, events["fermenter idle"])
-def delete_plots():
-    if os.path.isfile("static/plots/temp.svg"):
-        os.remove("static/plots/temp.svg")
-    if os.path.isfile("static/plots/optics.svg"):
-        os.remove("static/plots/optics.svg")
-    if os.path.isfile("static/plots/duty_cycles.svg"):
-        os.remove("static/plots/duty_cycles.svg")
-    if os.path.isfile("static/plots/environ.svg"):
-        os.remove("static/plots/environ.svg")
 @socketio.on("fermenter start", namespace="/socket")
 def handle_start(message):
     if events["fermenter idle"].is_set():
@@ -88,8 +65,8 @@ def update_stats(records, locks):
                 "start": records["start"],
                 "stop": records["stop"],
                 "now": datetime.now(),
-                "since": ((datetime.now() - records["start"]).total_seconds() /
-                          3600),
+                "since": fermenter.hours_offset(records["start"],
+                                                datetime.now()),
                 "temp": records["temp"][-1],
                 "heater": records["heater"][-1],
                 "impeller": records["impeller"][-1],
@@ -98,7 +75,6 @@ def update_stats(records, locks):
                         "red": records["optics"]["calibration"]["red"],
                         "green": records["optics"]["calibration"]["green"],
                     },
-                    "calibrations": records["optics"]["calibrations"],
                     "ambient": records["optics"]["ambient"][-1],
                     "red": records["optics"]["red"][-1],
                     "green": records["optics"]["green"][-1],
@@ -106,85 +82,6 @@ def update_stats(records, locks):
             }
         socketio.emit("stats update", stats, namespace="/socket")
         time.sleep(STATS_INTERVAL)
-def trans_to_abs(calib, transmittances):
-    """Converts a list of transmittances to a list of absorbances."""
-    absorbances = []
-    for entry in transmittances:
-        if entry and calib:
-            absorbances.append((entry[0], fermenter.get_abs(calib, entry[1])))
-    return absorbances
-def duty_to_percent(duties):
-    """Converts a list of duty cycles to a list of duty cycle percentages."""
-    percentages = []
-    for entry in duties:
-        if entry:
-            percentages.append((entry[0], entry[1] * 100))
-    return percentages
-def datetime_to_hours(start, series):
-    """Converts datetimes into hours."""
-    converted = []
-    for entry in series:
-        if entry:
-            converted.append(((entry[0] - start).total_seconds() / 3600,
-                              entry[1]))
-    return converted
-def plot_optics(records, locks):
-    optics_plot = XY(plot_config)
-    optics_plot.title = "Optical Measurements"
-    optics_plot.y_title = "Relative Absorbance"
-    with locks["records"]:
-        calib_red = records["optics"]["calibration"]["red"]
-        red = records["optics"]["red"]
-        calib_green = records["optics"]["calibration"]["green"]
-        green = records["optics"]["green"]
-        red_abs = trans_to_abs(calib_red, red)
-        green_abs = trans_to_abs(calib_green, green)
-        if red_abs:
-            optics_plot.add("Red (OD)", datetime_to_hours(records["start"],
-                                                          red_abs))
-        if green_abs:
-            optics_plot.add("Green", datetime_to_hours(records["start"],
-                                                       green_abs))
-    return optics_plot
-def plot_temp(records, locks):
-    temp_plot = XY(plot_config)
-    temp_plot.title = "Temperature"
-    temp_plot.y_title = "Temperature (deg C)"
-    temp_plot.fill = True
-    temp_plot.show_legend = False
-    with locks["records"]:
-        if records["temp"][-1]:
-            temp_plot.add("Temperature", datetime_to_hours(records["start"],
-                                                           records["temp"]))
-    return temp_plot
-def plot_duty_cycles(records, locks):
-    temp_plot = XY(plot_config)
-    temp_plot.title = "Actuator Duty Cycles"
-    temp_plot.y_title = "Duty Cycle (%)"
-    with locks["records"]:
-        temp_percentages = duty_to_percent(records["heater"])
-        impeller_percentages = duty_to_percent(records["impeller"])
-        if temp_percentages:
-            temp_plot.add("Heater", datetime_to_hours(records["start"],
-                                                      temp_percentages))
-        if impeller_percentages:
-            records["impeller"].append((datetime.now(),
-                                       records["impeller"][-1][1]))
-            temp_plot.add("Impeller", datetime_to_hours(records["start"],
-                                                        impeller_percentages))
-    return temp_plot
-def plot_environ(records, locks):
-    environ_plot = XY(plot_config)
-    environ_plot.title = "Environment"
-    environ_plot.y_title = "Ambient Light"
-    environ_plot.fill = True
-    environ_plot.show_legend = False
-    with locks["records"]:
-        if records["optics"]["ambient"][-1]:
-            environ_plot.add("Ambient",
-                             datetime_to_hours(records["start"],
-                                               records["optics"]["ambient"]))
-    return environ_plot
 def update_plots(records, locks):
     temp_last_update = None
     optics_last_update = None
@@ -193,8 +90,7 @@ def update_plots(records, locks):
         rerender_optics = False
         rerender_temp = False
         rerender_duty_cycles = False
-        # We lock the arduino to avoid brownouts/etc.
-        with locks["records"] and locks["arduino"]:
+        with locks["records"]:
             if records["optics"]["red"][-1]:
                 if (not optics_last_update or
                         optics_last_update < records["optics"]["red"][-1][0]):
@@ -210,22 +106,26 @@ def update_plots(records, locks):
                         duty_cycles_last_update < records["heater"][-1][0]):
                     duty_cycles_last_update = records["heater"][-1][0]
                     rerender_duty_cycles = True
+                    records["impeller"].append((datetime.now(),
+                                                records["impeller"][-1][1]))
+            start = records["start"]
             if rerender_optics:
-                plot_optics(records, locks).render_to_file(PLOTS_DIR +
-                                                           "optics.svg")
-                plot_environ(records, locks).render_to_file(PLOTS_DIR +
-                                                           "environ.svg")
-                socketio.emit("optics plot update", {"time": datetime.now()},
-                              namespace="/socket")
+                socketio.emit("optics plot update", {
+                    "red": records["optics"]["red"],
+                    "green": records["optics"]["green"],
+                }, namespace="/socket")
+                socketio.emit("environ plot update", {
+                    "ambient": records["optics"]["ambient"]
+                }, namespace="/socket")
             if rerender_temp:
-                plot_temp(records, locks).render_to_file(PLOTS_DIR + "temp.svg")
-                socketio.emit("temp plot update", {"time": datetime.now()},
-                              namespace="/socket")
+                socketio.emit("temp plot update", {
+                    "temp": records["temp"]
+                }, namespace="/socket")
             if rerender_duty_cycles:
-                plot_duty_cycles(records, locks).render_to_file(PLOTS_DIR +
-                                                                "duty_cycles.svg")
-                socketio.emit("duty cycles plot update", {"time": datetime.now()},
-                              namespace="/socket")
+                socketio.emit("duty cycles plot update", {
+                    "heater": records["heater"],
+                    "impeller": records["impeller"],
+                }, namespace="/socket")
         time.sleep(PLOTS_INTERVAL)
 
 ###############################################################################
@@ -250,11 +150,6 @@ def client():
     """Deliver the client-side scripting"""
     return send_from_directory("static", "client.js")
 
-@app.route("/js/<js>")
-def lib(js):
-    """Deliver js lib dependencies"""
-    return send_from_directory("static/js/", js)
-
 @app.route("/style.css")
 def style():
     """Deliver the client-side styling"""
@@ -270,5 +165,4 @@ def plots(plot):
 ###############################################################################
 if __name__ == "__main__":
     (a, records, locks, events, threads) = fermenter.run_fermenter()
-    delete_plots()
     socketio.run(app, host='0.0.0.0', port=80)

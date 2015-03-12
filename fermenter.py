@@ -108,6 +108,9 @@ def discard_light_outliers(samples):
 def get_abs(transmittance, full_transmittance):
     """Normalizes a transmittance against a calibration value."""
     return float(full_transmittance - transmittance) / full_transmittance
+def hours_offset(start, end):
+    """Returns the difference (in hours) between the two datetimes."""
+    return (end - start).total_seconds() / 3600
 
 ###############################################################################
 # ARDUINO SUBROUTINES
@@ -223,7 +226,7 @@ def measure_transmittances(a, arduino_lock):
 ###############################################################################
 # DATA LOGGING
 ###############################################################################
-def record_heat_control(a, arduino_lock):
+def record_heat_control(a, arduino_lock, start):
     """Returns a heat control record.
     Also adjusts the heating control effort and records that.
     """
@@ -233,15 +236,15 @@ def record_heat_control(a, arduino_lock):
     if np.isnan(temp):
         return None
     else:
-        return (end_time, temp, heater_duty_cycle)
-def record_transmittances(a, arduino_lock):
+        return (hours_offset(start, end_time), temp, heater_duty_cycle)
+def record_transmittances(a, arduino_lock, start):
     """Returns a transmittances record."""
     (ambient, red, green) = measure_transmittances(a, arduino_lock)
     end_time = datetime.now()
     if np.isnan(ambient) or np.isnan(red) or np.isnan(green):
         return None
     else:
-        return (end_time, ambient, red, green)
+        return (hours_offset(start, end_time), ambient, red, green)
 def construct_records():
     """Returns an empty records dictionary."""
     records = {
@@ -306,7 +309,9 @@ def start_fermenter(a, records, locks, idle_event):
     with locks["records"]:
         reinitialize_records(records)
         with locks["impeller motor"]:
-            records["impeller"].append((datetime.now(), IMPELLER_DEFAULT_DUTY))
+            start = records["start"]
+            records["impeller"].append((hours_offset(start, datetime.now()),
+                                        IMPELLER_DEFAULT_DUTY))
             initialize_default_actuators(a, locks["arduino"])
     print("Started.")
 def stop_fermenter(a, records, locks, idle_event):
@@ -316,13 +321,16 @@ def stop_fermenter(a, records, locks, idle_event):
     with locks["leds"]:
         turn_off_leds(a, locks["arduino"])
     with locks["records"]:
-        records["impeller"].append((datetime.now(),
+        start = records["start"]
+        records["impeller"].append((hours_offset(start, datetime.now()),
                                     records["impeller"][-1][1]))
-        records["heater"].append((datetime.now(), records["heater"][-1][1]))
+        records["heater"].append((hours_offset(start, datetime.now()),
+                                  records["heater"][-1][1]))
         with locks["impeller motor"] and locks["heater"]:
             turn_off_actuators(a, locks["arduino"])
-            records["impeller"].append((datetime.now(), 0))
-            records["heater"].append((datetime.now(), 0))
+            records["impeller"].append((hours_offset(start, datetime.now()),
+                                        0))
+            records["heater"].append((hours_offset(start, datetime.now()), 0))
         records["stop"] = datetime.now()
     print("Stopped.")
 def monitor_temp(a, records, locks, idle_event):
@@ -331,7 +339,9 @@ def monitor_temp(a, records, locks, idle_event):
     """
     while True:
         if not idle_event.is_set():
-            record = record_heat_control(a, locks["arduino"])
+            with locks["records"]:
+                start = records["start"]
+            record = record_heat_control(a, locks["arduino"], start)
             if record:
                 print(record)
                 with locks["arduino"] and locks["heater"]:
@@ -347,8 +357,10 @@ def monitor_optics(a, records, locks, calibrate_event, idle_event):
     """Continuously monitor and record fluid optical properties"""
     while True:
         if not idle_event.is_set():
+            with locks["records"]:
+                start = records["start"]
             with locks["leds"]:
-                record = record_transmittances(a, locks["arduino"])
+                record = record_transmittances(a, locks["arduino"], start)
             if record:
                 with locks["records"]:
                     if calibrate_event.is_set():
