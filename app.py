@@ -44,7 +44,7 @@ def update_stats(records, locks):
             stats = {
                 "start": records["start"],
                 "stop": records["stop"],
-                "since": datetime.now() - records["start"],
+                "now": datetime.now(),
                 "temp": records["temp"][-1],
                 "heater": records["heater"][-1],
                 "impeller": records["impeller"][-1],

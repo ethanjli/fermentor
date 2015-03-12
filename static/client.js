@@ -14,11 +14,14 @@ function start_text(data) {
     return "Fermenter has not yet started.";
   }
 }
-function stop_text(data, since) {
+function stop_text(data, now) {
   if (data) {
     return "Fermenter stopped at: " + data;
   } else {
-    return "Fermenter has been running for " + since;
+    data_date = new Date(data);
+    now_date = new Date(now);
+    since = Math.abs(now_date.getTime() - data_date.getTime());
+    return "Fermenter has been running for " + (since / (1000 * 3600)).toFixed(2) + " hours.";
   }
 }
 function temp_text(data) {
@@ -79,7 +82,7 @@ $(document).ready(function () {
   });
   socket.on("stats update", function (msg) {
     $("#start").text(start_text(msg.start));
-    $('#stop').text(stop_text(msg.stop, msg.since));
+    $('#stop').text(stop_text(msg.stop, msg.now));
     $('#temp').text(temp_text(msg.temp));
     $('#heater').text(heater_text(msg.heater));
     $('#impeller').text(impeller_text(msg.impeller));
