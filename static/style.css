@@ -1,4 +1,5 @@
 .plot_container {
-  width: 50%;
-  display: inline-block;
+  width: 40%;
+  float: left;
+  margin-right: 10px;
 }
