@@ -18,10 +18,7 @@ function stop_text(data, now) {
   if (data) {
     return "Fermenter stopped at: " + data;
   } else {
-    var data_date = new Date(data);
-    var now_date = new Date(now);
-    var since = now_date.getTime() - data_date.getTime();
-    return "Fermenter has been running for " + (since / (1000 * 3600)).toFixed(2) + " hours.";
+    return "It is currently: " + now;
   }
 }
 function temp_text(data) {
