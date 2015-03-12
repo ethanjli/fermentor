@@ -61,7 +61,7 @@ IMPELLER_DEFAULT_DUTY = 0.2 # default duty cycle of the impeller
 IDLE_CHECK_INTERVAL = 5 # (sec): time to wait between wakeup checks
 
 # Constants
-SERIAL_RATE = "115200" # (baud) rate of USB communication
+SERIAL_RATE = "9600" # (baud) rate of USB communication
 PWM_MAX = 255
 ARDUINO_PORT = "/dev/ttyACM0"
 ANALOG_PIN_OFFSET = 15 # the formal pin number corresponding to pin A0
@@ -392,7 +392,7 @@ def run_fermenter():
     turn_off_actuators(a, locks["arduino"])
     start_fermenter(a, records, locks, events["fermenter idle"])
     threads["temp"].start()
-    #threads["optics"].start()
+    threads["optics"].start()
     return (a, records, locks, events, threads)
 
 if __name__ == "__main__":

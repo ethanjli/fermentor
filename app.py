@@ -193,37 +193,39 @@ def update_plots(records, locks):
         rerender_optics = False
         rerender_temp = False
         rerender_duty_cycles = False
-        if records["optics"]["red"][-1]:
-            if (not optics_last_update or
-                    optics_last_update < records["optics"]["red"][-1][0]):
-                optics_last_update = records["optics"]["red"][-1][0]
-                rerender_optics = True
-        if records["temp"][-1]:
-            if (not temp_last_update or
-                    temp_last_update < records["temp"][-1][0]):
-                temp_last_update = records["temp"][-1][0]
-                rerender_temp = True
-        if records["heater"][-1]:
-            if (not duty_cycles_last_update or
-                    duty_cycles_last_update < records["heater"][-1][0]):
-                duty_cycles_last_update = records["heater"][-1][0]
-                rerender_duty_cycles = True
-        if rerender_optics:
-            plot_optics(records, locks).render_to_file(PLOTS_DIR +
-                                                       "optics.svg")
-            plot_environ(records, locks).render_to_file(PLOTS_DIR +
-                                                       "environ.svg")
-            socketio.emit("optics plot update", {"time": datetime.now()},
-                          namespace="/socket")
-        if rerender_temp:
-            plot_temp(records, locks).render_to_file(PLOTS_DIR + "temp.svg")
-            socketio.emit("temp plot update", {"time": datetime.now()},
-                          namespace="/socket")
-        if rerender_duty_cycles:
-            plot_duty_cycles(records, locks).render_to_file(PLOTS_DIR +
-                                                            "duty_cycles.svg")
-            socketio.emit("duty cycles plot update", {"time": datetime.now()},
-                          namespace="/socket")
+        # We lock the arduino to avoid brownouts/etc.
+        with locks["records"] and locks["arduino"]:
+            if records["optics"]["red"][-1]:
+                if (not optics_last_update or
+                        optics_last_update < records["optics"]["red"][-1][0]):
+                    optics_last_update = records["optics"]["red"][-1][0]
+                    rerender_optics = True
+            if records["temp"][-1]:
+                if (not temp_last_update or
+                        temp_last_update < records["temp"][-1][0]):
+                    temp_last_update = records["temp"][-1][0]
+                    rerender_temp = True
+            if records["heater"][-1]:
+                if (not duty_cycles_last_update or
+                        duty_cycles_last_update < records["heater"][-1][0]):
+                    duty_cycles_last_update = records["heater"][-1][0]
+                    rerender_duty_cycles = True
+            if rerender_optics:
+                plot_optics(records, locks).render_to_file(PLOTS_DIR +
+                                                           "optics.svg")
+                plot_environ(records, locks).render_to_file(PLOTS_DIR +
+                                                           "environ.svg")
+                socketio.emit("optics plot update", {"time": datetime.now()},
+                              namespace="/socket")
+            if rerender_temp:
+                plot_temp(records, locks).render_to_file(PLOTS_DIR + "temp.svg")
+                socketio.emit("temp plot update", {"time": datetime.now()},
+                              namespace="/socket")
+            if rerender_duty_cycles:
+                plot_duty_cycles(records, locks).render_to_file(PLOTS_DIR +
+                                                                "duty_cycles.svg")
+                socketio.emit("duty cycles plot update", {"time": datetime.now()},
+                              namespace="/socket")
         time.sleep(PLOTS_INTERVAL)
 
 ###############################################################################
