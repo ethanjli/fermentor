@@ -26,7 +26,7 @@ plot_config.x_title = "Time (h)"
 plot_config.value_formatter = lambda x: "%.2f" %x
 plot_config.stroke = True
 plot_config.fill = True
-plot_config.width = 400
+plot_config.width = 600
 plot_config.height = 400
 plot_config.legend_at_bottom =True
 
@@ -114,21 +114,26 @@ def plot_temp(records, locks):
             temp_plot.add("Temperature", datetime_to_hours(records["start"],
                                                            records["temp"]))
     return temp_plot
-def plot_duty(records, locks):
+def plot_duty_cycles(records, locks):
     temp_plot = XY(plot_config)
     temp_plot.title = "Actuator Duty Cycles"
     temp_plot.y_title = "Duty Cycle (%)"
     with locks["records"]:
         if records["heater"][-1]:
-            temp_plot.add("Duty Cycle", datetime_to_hours(records["start"],
-                                                          records["heater"]))
+            temp_plot.add("Heater", datetime_to_hours(records["start"],
+                                                      records["heater"]))
+        if records["impeller"][-1]:
+            temp_plot.add("Impeller", datetime_to_hours(records["start"],
+                                                        records["impeller"]))
     return temp_plot
 def update_plots(records, locks):
     temp_last_update = None
     optics_last_update = None
+    duty_cycles_last_update = None
     while True:
         rerender_optics = False
         rerender_temp = False
+        rerender_duty_cycles = False
         if records["optics"]["red"][-1]:
             if (not optics_last_update or
                     optics_last_update < records["optics"]["red"][-1][0]):
@@ -139,6 +144,11 @@ def update_plots(records, locks):
                     temp_last_update < records["temp"][-1][0]):
                 temp_last_update = records["temp"][-1][0]
                 rerender_temp = True
+        if records["heater"][-1]:
+            if (not duty_cycles_last_update or
+                    duty_cycles_last_update < records["heater"][-1][0]):
+                duty_cycles_last_update = records["heater"][-1][0]
+                rerender_duty_cycles = True
         if rerender_optics:
             plot_optics(records, locks).render_to_file(PLOTS_DIR +
                                                        "optics.svg")
@@ -147,6 +157,11 @@ def update_plots(records, locks):
         if rerender_temp:
             plot_temp(records, locks).render_to_file(PLOTS_DIR + "temp.svg")
             socketio.emit("temp plot update", {"time": datetime.now()},
+                          namespace="/socket")
+        if rerender_duty_cycles:
+            plot_duty_cycles(records, locks).render_to_file(PLOTS_DIR +
+                                                            "duty_cycles.svg")
+            socketio.emit("duty cycles plot update", {"time": datetime.now()},
                           namespace="/socket")
         time.sleep(PLOTS_INTERVAL)
 
