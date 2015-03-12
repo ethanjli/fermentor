@@ -209,7 +209,11 @@ def measure_temp(a, arduino_lock):
     """Returns the temperature as measured over a short time.
     Temperature is returned in deg C.
     """
-    return pin_val_to_temp(acquire_temp(a, arduino_lock))
+    acquired = acquire_temp(a, arduino_lock)
+    if acquired:
+        return pin_val_to_temp(acquire_temp(a, arduino_lock))
+    else:
+        return None
 def measure_transmittances(a, arduino_lock):
     """Returns normalized light intensities as acquired over an extended time.
     Light intensity is normalized to the ambient light.
