@@ -9,7 +9,8 @@ import logging
 from flask import Flask, send_from_directory
 from flask.ext.socketio import SocketIO, emit
 import pygal
-from pygal import XY
+from pygal import DateY
+import os
 import fermenter
 
 logging.basicConfig()
@@ -19,7 +20,7 @@ logging.basicConfig()
 ###############################################################################
 STATS_INTERVAL = 2 # (sec): time to wait between updating stats
 PLOTS_DIR = "static/plots/"
-PLOTS_INTERVAL = 10 # (sec): time to wait between updating plots
+PLOTS_INTERVAL = 2 # (sec): time to wait between updating plots
 
 ###############################################################################
 # GLOBALS
@@ -69,7 +70,7 @@ def trans_to_abs(calib, transmittances):
             absorbances.append((entry[0], fermenter.get_abs(calib, entry[1])))
     return absorbances
 def update_plots(records, locks):
-    optics_plot = XY(stroke=True)
+    optics_plot = DateY(stroke=True)
     optics_plot.title = "Optical Measurements"
     while True:
         rerender = False
@@ -81,12 +82,15 @@ def update_plots(records, locks):
             red_abs = trans_to_abs(calib_red, red)
             green_abs = trans_to_abs(calib_green, green)
             if red_abs:
+                optics_plot.remove("OD")
                 optics_plot.add("OD", red_abs)
                 rerender = True
             if green_abs:
+                optics_plot.remove("Green")
                 optics_plot.add("Green", green_abs)
                 rerender = True
         if rerender:
+            os.remove(PLOTS_DIR + "optics.svg")
             optics_plot.render_to_file(PLOTS_DIR + "optics.svg")
             socketio.emit("plots update", {"time": datetime.now()},
                           namespace="/socket")
