@@ -5,11 +5,15 @@ function absorbance(calib, transmittance) {
 function duty_cycle_to_percent(duty_cycle) {
   return (duty_cycle * 100).toFixed(0);
 }
+function convert_timezones(datestr) {
+  var date = new Date(datestr);
+  return date.toString();
+}
 
 // Strings
 function time_text(data) {
   if (data) {
-    return "Updated " + data[0] + ".";
+    return "Updated " + convert_timezones(data[0]) + ".";
   }
 }
 function start_text(data) {
