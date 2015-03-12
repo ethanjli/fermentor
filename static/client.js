@@ -135,7 +135,7 @@ $(document).ready(function () {
     data.addColumn('number', 'Temperature (deg C)');
     data.addRows(msg.temp);
     var options = {'title': 'Temperature', 'width': 600, 'height': 320};
-    var chart = new google.visualization.LineChart(document.getElementById('temp_plot'));
+    var chart = new google.charts.Line(document.getElementById('temp_plot'));
   });
   socket.on("duty cycles plot update", function(msg) {
     $('#duty_cycles_plot_cache').attr("data", "/plots/duty_cycles?" + msg.time);
