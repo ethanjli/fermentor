@@ -76,18 +76,22 @@ def initialize_plots():
     return optics
 def update_plots(records, locks, plots):
     while True:
+        rerender = False
         with (locks["records"]):
             calib_red = records["optics"]["calibration"]["red"]
             red = records["optics"]["red"]
             calib_green = records["optics"]["calibration"]["red"]
             green = records["optics"]["red"]
-            if red:
+            if red and calib_red:
                 plots["optics"].add("OD", trans_to_abs(calib_red, red))
-            if green:
+                rerender = True
+            if green and calib_red:
                 plots["optics"].add("Green", trans_to_abs(calib_green, green))
-        plots["optics"].render_to_file(PLOTS_DIR + "optics.svg")
-        socketio.emit("plots update", {"time": datetime.now()},
-                      namespace="/socket")
+                rerender = True
+        if rerender:
+            plots["optics"].render_to_file(PLOTS_DIR + "optics.svg")
+            socketio.emit("plots update", {"time": datetime.now()},
+                          namespace="/socket")
         time.sleep(PLOTS_INTERVAL)
 
 ###############################################################################
