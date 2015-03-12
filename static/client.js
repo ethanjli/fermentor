@@ -97,7 +97,7 @@ $(document).ready(function () {
   socket.on("temp plot update", function(msg) {
     $('#temp_plot').attr("data", "/plots/temp?" + msg.time);
   });
-  //socket.on("duty cycles plot update", function(msg) {
-  //  $('#duty_cycles_plot').attr("data", "/plots/duty_cycles?" + msg.time);
-  //});
+  socket.on("duty cycles plot update", function(msg) {
+    $('#duty_cycles_plot').attr("data", "/plots/duty_cycles?" + msg.time);
+  });
 });
