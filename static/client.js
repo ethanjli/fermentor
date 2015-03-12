@@ -18,9 +18,9 @@ function stop_text(data, now) {
   if (data) {
     return "Fermenter stopped at: " + data;
   } else {
-    data_date = new Date(data);
-    now_date = new Date(now);
-    since = Math.abs(now_date.getTime() - data_date.getTime());
+    var data_date = new Date(data);
+    var now_date = new Date(now);
+    var since = now_date.getTime() - data_date.getTime();
     return "Fermenter has been running for " + (since / (1000 * 3600)).toFixed(2) + " hours.";
   }
 }
