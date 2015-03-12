@@ -129,8 +129,11 @@ $(document).ready(function () {
   });
   socket.on("temp plot update", function(msg) {
     $('#temp_plot_cache').attr("data", "/plots/temp?" + msg.time);
-    var header = [['Time (h)', 'Temperature (°C)']];
-    var data = google.visualization.arrayToDataTable(header.concat(msg.temp));
+    //var header = [['Time (h)', 'Temperature (°C)']];
+    var data = new google.visualization.DataTable();
+    data.addColumn('number', 'Time (h)');
+    data.addColumn('number', 'Temperature (deg C)');
+    data.addRows(msg.temp);
     var options = {'title': 'Temperature', 'width': 600, 'height': 320};
     var chart = new google.visualization.LineChart(document.getElementById('temp_plot'));
   });
