@@ -176,7 +176,7 @@ def acquire_temp(a, arduino_lock):
                           TEMP_SAMPLES_PER_ACQUISITION, TEMP_SAMPLE_INTERVAL,
                           arduino_lock)
     discarded = discard_temp_outliers(samples)
-    if discarded:
+    if discarded.size:
         return np.mean(discarded)
     else:
         return None
@@ -201,7 +201,7 @@ def acquire_light(a, color, arduino_lock):
             LIGHT_SAMPLES_PER_ACQUISITION, LIGHT_SAMPLE_INTERVAL, arduino_lock)
     turn_off_leds(a, arduino_lock)
     discarded = discard_light_outliers(samples)
-    if discarded:
+    if discarded.size:
         return np.mean(discarded)
     else:
         return None
@@ -230,7 +230,7 @@ def measure_transmittances(a, arduino_lock):
     ambient_discarded = discard_light_outliers(np.array(acquisitions["ambient"]))
     red_discarded = discard_light_outliers(np.array(acquisitions["red"]))
     green_discarded = discard_light_outliers(np.array(acquisitions["green"]))
-    if ambient_discarded and red_discarded and green_discarded:
+    if ambient_discarded.size and red_discarded.size and green_discarded.size:
         ambient = np.mean(ambient_discarded)
         red = np.mean(red_discarded)
         green = np.mean(green_discarded)
