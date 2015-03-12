@@ -128,8 +128,8 @@ $(document).ready(function() {
     var calib_green = msg.calibration.green;
     var data = new google.visualization.DataTable();
     data.addColumn('number', 'Time (h)');
-    data.addColumn('number', 'Red (OD)');
     data.addColumn('number', 'Green');
+    data.addColumn('number', 'Red (OD)');
     data.addRows(msg.redgreen.map(function(curr) {
       return [curr[0], absorbance(calib_green, curr[2]), absorbance(calib_red, curr[1])];
     }));
@@ -143,8 +143,8 @@ $(document).ready(function() {
         1: {axis: 'Red'}
       },
       axes: {
-        Green: {label: 'Green Absorbance', color: '#6f9654'},
-        Red: {label: 'OD', color: '#db4437'},
+        Green: {label: 'Green Absorbance'},
+        Red: {label: 'OD'},
       },
     };
     var chart = new google.charts.Line(document.getElementById('optics_plot'));
