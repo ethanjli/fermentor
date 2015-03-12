@@ -36,20 +36,25 @@
     <div class="container">
       <div class="row">
         <div class="plot_container">
-          <object id="temp_plot" data="/plots/temp" type="image/svg+xml"></object>
+          <object id="temp_plot" type="image/svg+xml"></object>
         </div>
         <div class="plot_container">
-          <object id="optics_plot" data="/plots/optics" type="image/svg+xml"></object>
+          <object id="optics_plot" type="image/svg+xml"></object>
         </div>
       </div>
       <div class="row">
         <div class="plot_container">
-          <object id="duty_cycles_plot" data="/plots/duty_cycles" type="image/svg+xml"></object>
+          <object id="duty_cycles_plot" type="image/svg+xml"></object>
         </div>
         <div class="plot_container">
           ambient plot goes here
         </div>
       </div>
+    </div>
+    <div id="cache">
+      <object id="temp_plot_cache" data="/plots/temp" type="image/svg+xml"></object>
+      <object id="optics_plot_cache" data="/plots/optics" type="image/svg+xml"></object>
+      <object id="duty_cycles_plot_cache" data="/plots/duty_cycles" type="image/svg+xml"></object>
     </div>
   </body>
 </html>

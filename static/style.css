@@ -26,7 +26,11 @@ p {
 }
 
 .plot_container {
-  width: 50%;
+  width: 600px;
   padding: 10px;
   display: table-cell;
+}
+
+#cache {
+  display: none;
 }

@@ -92,12 +92,21 @@ $(document).ready(function () {
     $('#green').text(green_text(msg.optics.calibration.green, msg.optics.green));
   });
   socket.on("optics plot update", function(msg) {
-    $('#optics_plot').attr("data", "/plots/optics?" + msg.time);
+    $('#optics_plot_cache').attr("data", "/plots/optics?" + msg.time);
   });
   socket.on("temp plot update", function(msg) {
-    $('#temp_plot').attr("data", "/plots/temp?" + msg.time);
+    $('#temp_plot_cache').attr("data", "/plots/temp?" + msg.time);
   });
   socket.on("duty cycles plot update", function(msg) {
-    $('#duty_cycles_plot').attr("data", "/plots/duty_cycles?" + msg.time);
+    $('#duty_cycles_plot_cache').attr("data", "/plots/duty_cycles?" + msg.time);
+  });
+  $('#optics_plot_cache').load(function () {
+    $('#optics_plot').attr("data", $('#optics_plot_cache').attr("data"));
+  });
+  $('#temp_plot_cache').load(function () {
+    $('#temp_plot').attr("data", $('#temp_plot_cache').attr("data"));
+  });
+  $('#duty_cycles_plot_cache').load(function () {
+    $('#duty_cycles_plot').attr("data", $('#duty_cycles_plot_cache').attr("data"));
   });
 });
