@@ -84,7 +84,8 @@ def update_plots(records, locks, plots):
             plots["optics"].add("OD", trans_to_abs(calib_red, red))
             plots["optics"].add("Green", trans_to_abs(calib_green, green))
         plots["optics"].render_to_file(PLOTS_DIR + "optics.svg")
-        socketio.emit("plots update", datetime.now(), namespace="/socket")
+        socketio.emit("plots update", {"time": datetime.now()},
+                      namespace="/socket")
         time.sleep(PLOTS_INTERVAL)
 
 ###############################################################################

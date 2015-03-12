@@ -88,6 +88,6 @@ $(document).ready(function () {
     $('#green').text(green_text(msg.optics.calibration.green, msg.optics.green));
   });
   socket.on("stats update", function(msg) {
-    $('#optics_plot').attr("data", "/plots/optics?" + msg);
+    $('#optics_plot').attr("data", "/plots/optics?" + msg.time);
   });
 });
