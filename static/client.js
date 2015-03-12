@@ -13,7 +13,7 @@ function convert_timezones(datestr) {
 // Strings
 function time_text(data) {
   if (data) {
-    return "Updated: " + data[0] + " hours after start.";
+    return "Updated: " + (data[0]).toFixed(3) + " hours after start.";
   }
 }
 function start_text(data) {
@@ -31,7 +31,7 @@ function stop_text(data, since) {
   } else {
     $('form#startbutton').hide();
     $('form#stopbutton').show();
-    return "Fermenter has been running for " + since.toFixed(2) + " hours.";
+    return "Fermenter has been running for " + since.toFixed(3) + " hours.";
   }
 }
 function now_text(data) {
@@ -80,8 +80,9 @@ function green_text(green_calib, data) {
   }
 }
 
+google.load('visualization', '1.1', {packages: ['line']});
+
 $(document).ready(function () {
-  google.load('visualization', '1.0', {'packages': ['corechart']});
 
   // Set up socket
   namespace = "/socket";
@@ -128,6 +129,12 @@ $(document).ready(function () {
   });
   socket.on("temp plot update", function(msg) {
     $('#temp_plot_cache').attr("data", "/plots/temp?" + msg.time);
+    var header = [[{label: 'Time (h)', id: 'time'}, {label: 'Temperature (°C)', id: 'temp'}]];
+    var data = google.visualization.arrayToDataTable([
+        header.concat(msg.temp);
+    ]);
+    var options = {'title': 'Temperature', 'width': 600, 'height': 320};
+    var chart = new google.visualization.LineChart(document.getElementById('temp_plot'));
   });
   socket.on("duty cycles plot update", function(msg) {
     $('#duty_cycles_plot_cache').attr("data", "/plots/duty_cycles?" + msg.time);
