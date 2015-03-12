@@ -97,6 +97,7 @@ $(document).ready(function () {
   });
   socket.on("optics plot update", function(msg) {
     $('#optics_plot_cache').attr("data", "/plots/optics?" + msg.time);
+    $('#environ_plot_cache').attr("data", "/plots/environ?" + msg.time);
   });
   socket.on("temp plot update", function(msg) {
     $('#temp_plot_cache').attr("data", "/plots/temp?" + msg.time);
@@ -106,6 +107,9 @@ $(document).ready(function () {
   });
   document.getElementById('optics_plot_cache').addEventListener("load", function () {
     $('#optics_plot').attr("data", $('#optics_plot_cache').attr("data"));
+  });
+  document.getElementById('environ_plot_cache').addEventListener("load", function () {
+    $('#environ_plot').attr("data", $('#environ_plot_cache').attr("data"));
   });
   document.getElementById('temp_plot_cache').addEventListener("load", function () {
     $('#temp_plot').attr("data", $('#temp_plot_cache').attr("data"));
@@ -123,6 +127,10 @@ $(document).ready(function () {
   });
   $('form#impellermenu').change(function(event) {
     socket.emit("impeller set", {data: $('#impellerduty').val()});
+    return false;
+  });
+  $('form#recalibrate').submit(function(event) {
+    socket.emit("recalibrate optics", {});
     return false;
   });
 });

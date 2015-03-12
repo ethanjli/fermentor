@@ -32,5 +32,6 @@ p {
 }
 
 #cache {
-  height: 100px;
+  height: 0px;
+  width: 0px;
 }

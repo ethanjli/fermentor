@@ -59,11 +59,16 @@ def handle_start(message):
 @socketio.on("impeller set", namespace="/socket")
 def handle_impeller(message):
     with locks["records"]:
-        records["impeller"].append((datetime.now(),
-                                    records["impeller"][-1][1]))
-        fermenter.set_impeller(a, locks["arduino"], message["data"])
-        records["impeller"].append((datetime.now(),
-                                    message["data"]))
+        if message["data"]:
+            records["impeller"].append((datetime.now(),
+                                        records["impeller"][-1][1]))
+            fermenter.set_impeller(a, locks["arduino"], float(message["data"]))
+            records["impeller"].append((datetime.now(),
+                                        float(message["data"])))
+@socketio.on("recalibrate optics", namespace="/socket")
+def handle_recalibrate(message):
+    if not events["calibrate"].is_set():
+        events["calibrate"].set()
 
 ###############################################################################
 # THREADS
@@ -131,6 +136,7 @@ def plot_temp(records, locks):
     temp_plot.title = "Temperature"
     temp_plot.y_title = "Temperature (deg C)"
     temp_plot.fill = True
+    temp_plot.show_legend = False
     with locks["records"]:
         if records["temp"][-1]:
             temp_plot.add("Temperature", datetime_to_hours(records["start"],
@@ -145,9 +151,23 @@ def plot_duty_cycles(records, locks):
             temp_plot.add("Heater", datetime_to_hours(records["start"],
                                                       records["heater"]))
         if records["impeller"][-1]:
+            records["impeller"].append(datetime.now(),
+                                       records["impeller"][-1][1])
             temp_plot.add("Impeller", datetime_to_hours(records["start"],
                                                         records["impeller"]))
     return temp_plot
+def plot_environ(records, locks):
+    environ_plot = XY(plot_config)
+    environ_plot.title = "Environment"
+    environ_plot.y_title = "Ambient Light"
+    environ_plot.fill = True
+    environ_plot.show_legend = False
+    with locks["records"]:
+        if records["optics"]["ambient"][-1]:
+            environ_plot.add("Ambient",
+                             datetime_to_hours(records["start"],
+                                               records["optics"]["ambient"]))
+    return environ_plot
 def update_plots(records, locks):
     temp_last_update = None
     optics_last_update = None
@@ -174,6 +194,8 @@ def update_plots(records, locks):
         if rerender_optics:
             plot_optics(records, locks).render_to_file(PLOTS_DIR +
                                                        "optics.svg")
+            plot_environ(records, locks).render_to_file(PLOTS_DIR +
+                                                       "environ.svg")
             socketio.emit("optics plot update", {"time": datetime.now()},
                           namespace="/socket")
         if rerender_temp:
