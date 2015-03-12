@@ -125,8 +125,8 @@ def update_plots(records, locks):
                 }, namespace="/socket")
             if rerender_temp:
                 socketio.emit("temp plot update", {
-                    "tempheat": [x + (z,) for x, (y, z) in
-                                 zip(records["temp"], records["heater"])],
+                    "tempheater": [x + (z,) for x, (y, z) in
+                                   zip(records["temp"], records["heater"])],
                 }, namespace="/socket")
             if rerender_duty_cycles:
                 socketio.emit("impeller plot update", {
