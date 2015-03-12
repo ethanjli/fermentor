@@ -81,8 +81,10 @@ def update_plots(records, locks, plots):
             red = records["optics"]["red"]
             calib_green = records["optics"]["calibration"]["red"]
             green = records["optics"]["red"]
-            plots["optics"].add("OD", trans_to_abs(calib_red, red))
-            plots["optics"].add("Green", trans_to_abs(calib_green, green))
+            if red:
+                plots["optics"].add("OD", trans_to_abs(calib_red, red))
+            if green:
+                plots["optics"].add("Green", trans_to_abs(calib_green, green))
         plots["optics"].render_to_file(PLOTS_DIR + "optics.svg")
         socketio.emit("plots update", {"time": datetime.now()},
                       namespace="/socket")
