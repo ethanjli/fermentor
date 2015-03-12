@@ -151,8 +151,8 @@ def plot_duty_cycles(records, locks):
             temp_plot.add("Heater", datetime_to_hours(records["start"],
                                                       records["heater"]))
         if records["impeller"][-1]:
-            records["impeller"].append(datetime.now(),
-                                       records["impeller"][-1][1])
+            records["impeller"].append((datetime.now(),
+                                       records["impeller"][-1][1]))
             temp_plot.add("Impeller", datetime_to_hours(records["start"],
                                                         records["impeller"]))
     return temp_plot
