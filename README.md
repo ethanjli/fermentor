@@ -1,5 +1,5 @@
 # fermentor
-fermentor is the codebase for a Raspberry Pi to operate a simple Arduino-driven fermentor and provide a real-time web interface for high-level control of fermentor behavior. This was done by Ethan Li and Jessica Lam for the project extension for BIOE 123 ("Optics and Devices Lab") at Stanford University. This project implements proportional temperature control of a fermentor, along with OD and green absorption sensing to monitor growth of a custom E coli strain that produces purple protein.
+fermentor is the codebase for a Raspberry Pi to operate a simple Arduino-driven fermentor and provide a real-time web interface for high-level control of fermentor behavior. This was done by Ethan Li and Jessica Lam for the project extension for BIOE 123 ("Optics and Devices Lab") at Stanford University. This project implements proportional temperature control of a fermentor, along with OD and green absorption sensing to monitor growth of a custom E coli strain that produces purple protein. View a writeup of the project at [lietk12.github.io/fermentor](//lietk12.github.io/fermentor).
 
 ## Dependencies
 The following must be installed to run the web interface:
